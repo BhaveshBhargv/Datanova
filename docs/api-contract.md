@@ -136,3 +136,57 @@ keywords are rejected. Returns `201` with the created dataset
 
 ### `DELETE /api/connections/{id}`  🔒
 `204 No Content`.
+
+# Phase 3
+
+All Phase 3 endpoints require auth and are ownership-scoped. Profiling and preview
+operate on the **current** data (original replayed through stored cleaning steps).
+
+## Profiling
+
+### `GET /api/datasets/{id}/profile`  🔒
+Automated data-quality report:
+```json
+{
+  "n_rows": 6, "n_columns": 3, "duplicate_rows": 1,
+  "missing_cells": 1, "missing_pct": 5.56, "memory_bytes": 555,
+  "quality_score": 86.2,
+  "columns": [
+    { "name": "score", "dtype": "float", "count": 5, "missing": 1,
+      "missing_pct": 16.67, "unique": 4, "min": 10, "max": 1000,
+      "mean": 208.8, "median": 11, "std": 441.9, "q1": 10.5, "q3": 12,
+      "outliers": 1, "suggested_type": null },
+    { "name": "city", "dtype": "string", "count": 6, "missing": 0,
+      "unique": 2, "top_values": [{"value":"london","count":3}],
+      "suggested_type": "category" }
+  ]
+}
+```
+Outliers use the IQR (1.5×) rule; `suggested_type` flags text columns that look
+numeric/datetime/boolean/categorical. `quality_score` is a heuristic (100 minus
+weighted penalties for missing %, duplicate %, and outlier %).
+
+## Cleaning (reversible history)
+
+The original ingested data is immutable; each step is stored and the current data
+is the original **replayed** through all steps. Steps are validated (dry-run) before
+being saved.
+
+### `GET /api/datasets/{id}/transformations`  🔒
+Ordered list of applied steps: `[{ id, order_index, operation, params, created_at }]`.
+
+### `POST /api/datasets/{id}/transformations`  🔒
+Apply a step; returns the updated dataset (new shape + schema).
+```json
+{ "operation": "impute_missing", "params": { "column": "score", "strategy": "median" } }
+```
+Operations: `drop_duplicates`, `drop_missing_rows`, `drop_columns`, `rename_columns`,
+`impute_missing` (mean/median/mode/constant), `cast_type`
+(integer/float/string/boolean/datetime/category), `handle_outliers` (clip/remove, IQR).
+`400` if the step is invalid for the current data; `422` for an unknown operation.
+
+### `POST /api/datasets/{id}/transformations/undo`  🔒
+Remove the last step and replay. Returns the updated dataset.
+
+### `POST /api/datasets/{id}/transformations/reset`  🔒
+Clear all steps, reverting to the original. Returns the updated dataset.

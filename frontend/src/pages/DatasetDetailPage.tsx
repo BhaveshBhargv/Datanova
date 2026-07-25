@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   getDataset,
   previewDataset,
@@ -8,29 +8,35 @@ import {
   type DatasetPreview,
 } from "../lib/datasets";
 import { cellText, formatDate } from "../lib/format";
+import ProfilePanel from "../components/ProfilePanel";
+import CleaningPanel from "../components/CleaningPanel";
+
+type Tab = "preview" | "profile" | "cleaning";
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [dataset, setDataset] = useState<Dataset | null>(null);
-  const [preview, setPreview] = useState<DatasetPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("preview");
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
+  // Bumped whenever the underlying data changes, to refresh preview/profile.
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     if (!id) return;
-    (async () => {
-      try {
-        const ds = await getDataset(id);
+    getDataset(id)
+      .then((ds) => {
         setDataset(ds);
         setName(ds.name);
-        setPreview(await previewDataset(id, 50));
-      } catch {
-        setError("Could not load this dataset.");
-      }
-    })();
+      })
+      .catch(() => setError("Could not load this dataset."));
   }, [id]);
+
+  const onDataChanged = useCallback((updated: Dataset) => {
+    setDataset(updated);
+    setVersion((v) => v + 1);
+  }, []);
 
   async function saveName() {
     if (!id) return;
@@ -40,10 +46,16 @@ export default function DatasetDetailPage() {
   }
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!dataset) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!dataset || !id) return <p className="text-sm text-slate-500">Loading…</p>;
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "preview", label: "Preview" },
+    { key: "profile", label: "Profile" },
+    { key: "cleaning", label: "Cleaning" },
+  ];
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <Link to="/datasets" className="text-sm text-indigo-600 hover:underline">
         ← Datasets
       </Link>
@@ -74,9 +86,7 @@ export default function DatasetDetailPage() {
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              {dataset.name}
-            </h1>
+            <h1 className="text-2xl font-semibold text-slate-900">{dataset.name}</h1>
             <button
               onClick={() => setEditing(true)}
               className="text-sm text-slate-400 hover:text-indigo-600"
@@ -98,62 +108,77 @@ export default function DatasetDetailPage() {
         <span>Created {formatDate(dataset.created_at)}</span>
       </div>
 
-      {/* Schema */}
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Schema
-      </h2>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {dataset.columns.map((c) => (
-          <span
-            key={c.name}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
+      {/* Tabs */}
+      <div className="mt-6 flex gap-1 border-b border-slate-200">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition ${
+              tab === t.key
+                ? "border-indigo-600 text-indigo-700"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
           >
-            <span className="font-medium text-slate-700">{c.name}</span>
-            <span className="text-xs text-slate-400">{c.dtype}</span>
-            {c.nullable && (
-              <span className="text-xs text-amber-500">nullable</span>
-            )}
-          </span>
+            {t.label}
+          </button>
         ))}
       </div>
 
-      {/* Preview */}
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Preview
-      </h2>
-      <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        {preview && (
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                {preview.columns.map((c) => (
-                  <th key={c} className="whitespace-nowrap px-4 py-2 font-medium">
-                    {c}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {preview.rows.map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50">
-                  {preview.columns.map((c) => (
-                    <td key={c} className="whitespace-nowrap px-4 py-2 text-slate-700">
-                      {cellText(row[c])}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="mt-6">
+        {tab === "preview" && <PreviewTab datasetId={id} version={version} />}
+        {tab === "profile" && <ProfilePanel datasetId={id} version={version} />}
+        {tab === "cleaning" && (
+          <CleaningPanel
+            datasetId={id}
+            columns={dataset.columns}
+            onChanged={onDataChanged}
+          />
         )}
       </div>
+    </div>
+  );
+}
 
-      <button
-        onClick={() => navigate("/datasets")}
-        className="mt-6 text-sm text-slate-500 hover:text-slate-700"
-      >
-        Done
-      </button>
+function PreviewTab({
+  datasetId,
+  version,
+}: {
+  datasetId: string;
+  version: number;
+}) {
+  const [preview, setPreview] = useState<DatasetPreview | null>(null);
+
+  useEffect(() => {
+    previewDataset(datasetId, 50).then(setPreview);
+  }, [datasetId, version]);
+
+  if (!preview) return <p className="text-sm text-slate-500">Loading…</p>;
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="min-w-full text-sm">
+        <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <tr>
+            {preview.columns.map((c) => (
+              <th key={c} className="whitespace-nowrap px-4 py-2 font-medium">
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {preview.rows.map((row, i) => (
+            <tr key={i} className="hover:bg-slate-50">
+              {preview.columns.map((c) => (
+                <td key={c} className="whitespace-nowrap px-4 py-2 text-slate-700">
+                  {cellText(row[c])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

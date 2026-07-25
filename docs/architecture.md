@@ -72,6 +72,20 @@ Connection credentials are encrypted at rest; imports are read-only and row-capp
 arbitrary DB hosts is inherent to the feature (SSRF surface) — acceptable here; production would
 add host allowlisting/egress proxying.
 
+## Profiling & cleaning (Phase 3)
+
+- **Profiling** (`services/profile.py`) — dataset- and column-level quality stats,
+  IQR outlier counts, and type suggestions for text columns that look
+  numeric/datetime/boolean/categorical, plus a heuristic quality score.
+- **Cleaning** (`services/transform.py` + `services/cleaning.py`) — a **replay-from-original**
+  model: the ingested Parquet is immutable; each cleaning step is stored in the
+  `transformations` table, and the current data (`cleaned_path`) is the original replayed
+  through all steps. This gives history, **undo**, and **reset** deterministically. Steps are
+  validated by dry-running them against the current data before being persisted.
+
+Seven operations are supported: drop duplicates, drop missing rows, drop/rename columns,
+impute missing (mean/median/mode/constant), cast type, and handle outliers (clip/remove).
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

@@ -17,10 +17,13 @@ from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.core.storage import storage
 from app.crud import dataset as dataset_crud
+from app.crud import transformation as transformation_crud
 from app.models.dataset import SOURCE_UPLOAD, STATUS_READY, Dataset
 from app.models.user import User
 from app.schemas.dataset import DatasetPreview, DatasetRead, DatasetUpdate
-from app.services import ingest
+from app.schemas.profile import DatasetProfile
+from app.schemas.transformation import TransformationCreate, TransformationRead
+from app.services import cleaning, ingest, profile, transform
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -99,7 +102,7 @@ def preview_dataset(
             status_code=status.HTTP_409_CONFLICT,
             detail="Dataset has no stored data to preview.",
         )
-    columns, records = ingest.preview(dataset.parquet_path, rows)
+    columns, records = ingest.preview(cleaning.current_path(dataset), rows)
     return DatasetPreview(columns=columns, rows=records)
 
 
@@ -121,7 +124,80 @@ def delete_dataset(
     user: User = Depends(get_current_user),
 ) -> None:
     dataset = _get_or_404(db, user, dataset_id)
-    for rel in (dataset.parquet_path, dataset.original_path):
+    for rel in (dataset.parquet_path, dataset.original_path, dataset.cleaned_path):
         if rel:
             storage.delete(rel)
     dataset_crud.delete(db, dataset)
+
+
+# --- Profiling & cleaning (Phase 3) ---------------------------------------
+
+
+@router.get("/{dataset_id}/profile", response_model=DatasetProfile)
+def profile_dataset(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    dataset = _get_or_404(db, user, dataset_id)
+    return profile.profile_dataframe(cleaning.load_current(dataset))
+
+
+@router.get("/{dataset_id}/transformations", response_model=list[TransformationRead])
+def list_transformations(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    dataset = _get_or_404(db, user, dataset_id)
+    return transformation_crud.list_for_dataset(db, dataset.id)
+
+
+@router.post("/{dataset_id}/transformations", response_model=DatasetRead)
+def apply_transformation(
+    dataset_id: uuid.UUID,
+    step: TransformationCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Dataset:
+    dataset = _get_or_404(db, user, dataset_id)
+    steps = transformation_crud.list_for_dataset(db, dataset.id)
+
+    # Validate by dry-running the step against the current data before saving.
+    try:
+        transform.apply_step(cleaning.load_current(dataset), step.operation, step.params)
+    except transform.TransformError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    transformation_crud.add(
+        db, dataset.id, len(steps), step.operation, step.params
+    )
+    steps = transformation_crud.list_for_dataset(db, dataset.id)
+    cleaning.rebuild(db, dataset, steps)
+    return dataset
+
+
+@router.post("/{dataset_id}/transformations/undo", response_model=DatasetRead)
+def undo_transformation(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Dataset:
+    dataset = _get_or_404(db, user, dataset_id)
+    steps = transformation_crud.list_for_dataset(db, dataset.id)
+    if steps:
+        transformation_crud.delete_last(db, steps)
+        cleaning.rebuild(db, dataset, transformation_crud.list_for_dataset(db, dataset.id))
+    return dataset
+
+
+@router.post("/{dataset_id}/transformations/reset", response_model=DatasetRead)
+def reset_transformations(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Dataset:
+    dataset = _get_or_404(db, user, dataset_id)
+    transformation_crud.clear(db, dataset.id)
+    cleaning.rebuild(db, dataset, [])
+    return dataset

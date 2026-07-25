@@ -82,6 +82,10 @@ def parquet_rel_path(owner_id: uuid.UUID, dataset_id: uuid.UUID) -> str:
     return f"{owner_id}/{dataset_id}.parquet"
 
 
+def cleaned_rel_path(owner_id: uuid.UUID, dataset_id: uuid.UUID) -> str:
+    return f"{owner_id}/{dataset_id}.cleaned.parquet"
+
+
 def original_rel_path(owner_id: uuid.UUID, dataset_id: uuid.UUID, fmt: str) -> str:
     return f"{owner_id}/{dataset_id}.{fmt}"
 

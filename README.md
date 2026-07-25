@@ -20,8 +20,8 @@ analytics assistant — with dashboards and exportable reports.
 
 1. **Foundation & Auth** — project architecture, backend, frontend, DB, JWT login ✅
 2. **Data Ingestion** — CSV/Excel upload + SQL DB connections ✅
+3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history ✅
    _← current_
-3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history
 4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations
 5. **Conversational AI Assistant** — NL Q&A → SQL/Python + business explanations
 6. **AutoML** — auto problem detection, multi-model training, comparison

@@ -8,13 +8,20 @@ from sqlalchemy.pool import StaticPool
 from app.core.config import settings
 
 if settings.DATABASE_URL.startswith("sqlite"):
-    # SQLite is used for local dev/tests; allow cross-thread use under the
-    # ASGI threadpool with a single shared connection.
-    engine = create_engine(
-        settings.DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    connect_args = {"check_same_thread": False}
+    if ":memory:" in settings.DATABASE_URL or settings.DATABASE_URL in (
+        "sqlite://",
+        "sqlite:///:memory:",
+    ):
+        # In-memory DB: one shared connection so every session sees the schema.
+        engine = create_engine(
+            settings.DATABASE_URL,
+            connect_args=connect_args,
+            poolclass=StaticPool,
+        )
+    else:
+        # File-based dev DB: normal pooling, safe for concurrent ASGI threads.
+        engine = create_engine(settings.DATABASE_URL, connect_args=connect_args)
 else:
     engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
 

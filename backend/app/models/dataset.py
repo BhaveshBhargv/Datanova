@@ -37,6 +37,8 @@ class Dataset(Base):
 
     original_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     parquet_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Parquet of the current cleaned data; null means the original is current.
+    cleaned_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     n_rows: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     n_columns: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
