@@ -190,3 +190,46 @@ Remove the last step and replay. Returns the updated dataset.
 
 ### `POST /api/datasets/{id}/transformations/reset`  🔒
 Clear all steps, reverting to the original. Returns the updated dataset.
+
+# Phase 4
+
+EDA, charting, and AI explanations — all 🔒, ownership-scoped, over the current data.
+
+## EDA
+
+### `GET /api/datasets/{id}/eda/summary`  🔒
+```json
+{
+  "numeric": { "age": {"count":120,"mean":44.1,"std":13.2,"min":20,"max":64, "...":"..."} },
+  "correlations": { "columns": ["age","income","spend"], "matrix": [[1.0,0.98,0.97], ...] },
+  "recommended_charts": [
+    { "type": "histogram", "column": "age", "reason": "Distribution of age" },
+    { "type": "scatter", "x": "age", "y": "income", "reason": "Relationship between age and income" }
+  ]
+}
+```
+
+## Charts
+
+### `POST /api/datasets/{id}/chart`  🔒
+Body `ChartSpec { type, column?, x?, y?, bins?, top_n? }`. `type` ∈
+`histogram | bar | pie | box | scatter | correlation_heatmap | line`.
+Returns ECharts-ready data:
+```json
+{ "type":"histogram", "title":"Distribution of age", "x_label":"age", "y_label":"Count",
+  "categories":["20.00–24.40", "..."], "series":[{"name":"age","data":[8,12,...]}], "extra":{} }
+```
+`400` for an unknown/non-applicable column; `422` for an unknown chart type.
+
+## AI explanations
+
+### `POST /api/datasets/{id}/explain`  🔒
+Body `{ kind: "overview" | "chart", spec?: ChartSpec }`. The backend recomputes the
+relevant stats server-side (grounded, injection-safe), prompts the LLM (OpenRouter),
+and returns:
+```json
+{ "text": "…plain-English explanation…", "source": "llm" }
+```
+`source` is `"llm"` when `OPENROUTER_API_KEY` is configured and the call succeeds,
+otherwise `"fallback"` (a deterministic rule-based narrative). The endpoint always
+returns `200` with usable text.

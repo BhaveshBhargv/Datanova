@@ -10,8 +10,9 @@ import {
 import { cellText, formatDate } from "../lib/format";
 import ProfilePanel from "../components/ProfilePanel";
 import CleaningPanel from "../components/CleaningPanel";
+import ExplorePanel from "../components/ExplorePanel";
 
-type Tab = "preview" | "profile" | "cleaning";
+type Tab = "preview" | "profile" | "explore" | "cleaning";
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +52,7 @@ export default function DatasetDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "preview", label: "Preview" },
     { key: "profile", label: "Profile" },
+    { key: "explore", label: "Explore" },
     { key: "cleaning", label: "Cleaning" },
   ];
 
@@ -128,6 +130,13 @@ export default function DatasetDetailPage() {
       <div className="mt-6">
         {tab === "preview" && <PreviewTab datasetId={id} version={version} />}
         {tab === "profile" && <ProfilePanel datasetId={id} version={version} />}
+        {tab === "explore" && (
+          <ExplorePanel
+            datasetId={id}
+            columns={dataset.columns}
+            version={version}
+          />
+        )}
         {tab === "cleaning" && (
           <CleaningPanel
             datasetId={id}

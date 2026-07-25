@@ -20,10 +20,12 @@ from app.crud import dataset as dataset_crud
 from app.crud import transformation as transformation_crud
 from app.models.dataset import SOURCE_UPLOAD, STATUS_READY, Dataset
 from app.models.user import User
+from app.schemas.chart import ChartData, ChartSpec
 from app.schemas.dataset import DatasetPreview, DatasetRead, DatasetUpdate
+from app.schemas.eda import EdaSummary, ExplainRequest, ExplainResponse
 from app.schemas.profile import DatasetProfile
 from app.schemas.transformation import TransformationCreate, TransformationRead
-from app.services import cleaning, ingest, profile, transform
+from app.services import charts, cleaning, eda, ingest, narrate, profile, transform
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -201,3 +203,49 @@ def reset_transformations(
     transformation_crud.clear(db, dataset.id)
     cleaning.rebuild(db, dataset, [])
     return dataset
+
+
+# --- EDA & visualization (Phase 4) ----------------------------------------
+
+
+@router.get("/{dataset_id}/eda/summary", response_model=EdaSummary)
+def eda_summary(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    dataset = _get_or_404(db, user, dataset_id)
+    return eda.summary(cleaning.load_current(dataset))
+
+
+@router.post("/{dataset_id}/chart", response_model=ChartData)
+def build_chart(
+    dataset_id: uuid.UUID,
+    spec: ChartSpec,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    dataset = _get_or_404(db, user, dataset_id)
+    try:
+        return charts.build(cleaning.load_current(dataset), spec.model_dump())
+    except charts.ChartError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.post("/{dataset_id}/explain", response_model=ExplainResponse)
+def explain(
+    dataset_id: uuid.UUID,
+    req: ExplainRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ExplainResponse:
+    dataset = _get_or_404(db, user, dataset_id)
+    try:
+        text, source = narrate.explain(
+            cleaning.load_current(dataset),
+            req.kind,
+            req.spec.model_dump() if req.spec else None,
+        )
+    except (charts.ChartError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return ExplainResponse(text=text, source=source)

@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 50
     IMPORT_ROW_CAP: int = 100_000
 
+    # LLM (OpenRouter, OpenAI-compatible). If OPENROUTER_API_KEY is unset, AI
+    # explanations fall back to a deterministic rule-based narrative.
+    OPENROUTER_API_KEY: str | None = None
+    LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
+    LLM_MODEL: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
+    LLM_MAX_TOKENS: int = 500
+    LLM_TIMEOUT: int = 30
+
     # CORS — comma-separated origins. Kept as a raw string because
     # pydantic-settings JSON-decodes list-typed env values before validators run.
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173"

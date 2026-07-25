@@ -13,6 +13,7 @@ analytics assistant — with dashboards and exportable reports.
 | Database | PostgreSQL |
 | Data science | Pandas, NumPy, scikit-learn, XGBoost, SHAP |
 | Frontend | React, TypeScript, Tailwind CSS, Apache ECharts |
+| AI / LLM | OpenRouter (OpenAI-compatible), configurable model |
 | Auth | JWT (access + refresh) |
 | Deployment | Render (backend), Vercel (frontend) |
 
@@ -21,8 +22,8 @@ analytics assistant — with dashboards and exportable reports.
 1. **Foundation & Auth** — project architecture, backend, frontend, DB, JWT login ✅
 2. **Data Ingestion** — CSV/Excel upload + SQL DB connections ✅
 3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history ✅
+4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations ✅
    _← current_
-4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations
 5. **Conversational AI Assistant** — NL Q&A → SQL/Python + business explanations
 6. **AutoML** — auto problem detection, multi-model training, comparison
 7. **Explainable AI** — SHAP feature importance + prediction explanations

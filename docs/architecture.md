@@ -86,6 +86,23 @@ add host allowlisting/egress proxying.
 Seven operations are supported: drop duplicates, drop missing rows, drop/rename columns,
 impute missing (mean/median/mode/constant), cast type, and handle outliers (clip/remove).
 
+## EDA & visualization (Phase 4)
+
+- **`services/eda.py`** — numeric summaries, correlation matrix, and rule-based chart
+  recommendations from column types.
+- **`services/charts.py`** — computes ECharts-ready aggregates server-side for 7 chart
+  types (histogram, bar, pie, box, scatter, correlation heatmap, line). Only small
+  summaries cross the wire; the React `<Chart>` wrapper renders them with Apache ECharts.
+- **`services/llm.py`** — thin OpenRouter (OpenAI-compatible) client over `httpx`. No key ⇒
+  disabled.
+- **`services/narrate.py`** — grounds an explanation: it recomputes stats server-side,
+  builds the prompt from those facts (so client text can't inject), calls the LLM, and
+  falls back to a deterministic rule-based narrative when the LLM is unavailable. Every
+  explanation reports its `source` (`llm` or `fallback`).
+
+The LLM provider/model are env-configured (`OPENROUTER_API_KEY`, `LLM_MODEL`, …); the app
+is fully functional without a key.
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:
