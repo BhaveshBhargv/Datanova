@@ -49,8 +49,31 @@ Database migrations live in `backend/alembic/` and are applied with `alembic upg
 - `components/ProtectedRoute.tsx` — gate for authenticated routes.
 - `pages/` — Login, Register, Dashboard.
 
+## Data ingestion (Phase 2)
+
+Two ingestion paths land as **datasets**:
+
+- **File upload** (`services/ingest.py`) — validates `.csv`/`.xlsx` (type, size, parseability),
+  infers a column schema, stores the original file, and writes a **Parquet** copy for fast,
+  dtype-stable reads in later phases.
+- **Database import** (`services/db_import.py`) — builds a SQLAlchemy engine for
+  PostgreSQL/MySQL/SQLite, tests connectivity, lists tables, and imports a table (reflected
+  + row-capped `SELECT`) or a validated read-only query into a Parquet-backed dataset.
+
+Supporting infrastructure:
+
+| Module | Responsibility |
+|--------|----------------|
+| `core/storage.py` | Storage abstraction (`LocalStorage` now; S3 later) with path-traversal guards |
+| `core/crypto.py` | Fernet field encryption for DB-connection passwords (never serialized back) |
+| `core/types.py` | `GUID` + `JSONVariant` (JSONB on PostgreSQL, JSON on SQLite) |
+
+Connection credentials are encrypted at rest; imports are read-only and row-capped. Reaching
+arbitrary DB hosts is inherent to the feature (SSRF surface) — acceptable here; production would
+add host allowlisting/egress proxying.
+
 ## Extending in later phases
 
-New resources (datasets, models, reports, dashboards) follow the same vertical slice:
-`models/` → Alembic migration → `schemas/` → `crud/` → `api/routes/`. This keeps each
-phase an additive, reviewable change.
+New resources (models, reports, dashboards) follow the same vertical slice:
+`models/` → Alembic migration → `schemas/` → `crud/` → optional `services/` → `api/routes/`.
+This keeps each phase an additive, reviewable change.

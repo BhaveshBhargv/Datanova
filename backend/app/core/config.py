@@ -1,7 +1,7 @@
 """Application configuration, driven entirely by environment variables."""
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,16 +26,25 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    # Field-level encryption (DB connection passwords). If unset, a key is
+    # derived deterministically from SECRET_KEY (fine for dev; set explicitly
+    # in production). Generate one with:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    FIELD_ENCRYPTION_KEY: str | None = None
 
-    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
-    @classmethod
-    def _split_origins(cls, v):
-        """Accept a comma-separated string or a list."""
-        if isinstance(v, str):
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return v
+    # Data ingestion
+    UPLOAD_DIR: str = "uploads"
+    MAX_UPLOAD_SIZE_MB: int = 50
+    IMPORT_ROW_CAP: int = 100_000
+
+    # CORS — comma-separated origins. Kept as a raw string because
+    # pydantic-settings JSON-decodes list-typed env values before validators run.
+    BACKEND_CORS_ORIGINS: str = "http://localhost:5173"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.BACKEND_CORS_ORIGINS.split(",") if o.strip()]
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

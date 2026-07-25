@@ -18,8 +18,9 @@ analytics assistant — with dashboards and exportable reports.
 
 ## Roadmap (11 phases → milestones)
 
-1. **Foundation & Auth** — project architecture, backend, frontend, DB, JWT login ← _current_
-2. **Data Ingestion** — CSV/Excel upload + SQL DB connections
+1. **Foundation & Auth** — project architecture, backend, frontend, DB, JWT login ✅
+2. **Data Ingestion** — CSV/Excel upload + SQL DB connections ✅
+   _← current_
 3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history
 4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations
 5. **Conversational AI Assistant** — NL Q&A → SQL/Python + business explanations

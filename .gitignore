@@ -15,6 +15,7 @@ node_modules/
 dist/
 .vite/
 *.local
+*.tsbuildinfo
 
 # ---- Env & secrets ----
 .env
@@ -32,3 +33,5 @@ Thumbs.db
 # ---- Data (uploads land here in later phases) ----
 backend/uploads/
 *.sqlite3
+*.db
+backend/dev.db
