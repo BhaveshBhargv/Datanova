@@ -23,8 +23,8 @@ analytics assistant — with dashboards and exportable reports.
 2. **Data Ingestion** — CSV/Excel upload + SQL DB connections ✅
 3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history ✅
 4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations ✅
+5. **Conversational AI Assistant** — NL Q&A → SQL + business explanations ✅
    _← current_
-5. **Conversational AI Assistant** — NL Q&A → SQL/Python + business explanations
 6. **AutoML** — auto problem detection, multi-model training, comparison
 7. **Explainable AI** — SHAP feature importance + prediction explanations
 8. **NL→SQL Engine** — safe NL-to-SQL: validate, execute, optimize, explain
@@ -54,7 +54,8 @@ Backend: http://localhost:8000 · Docs: http://localhost:8000/docs
 ### 2. Backend without Docker
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv 
+.venv\Scripts\activate
 pip install -r requirements.txt
 alembic upgrade head
 uvicorn app.main:app --reload

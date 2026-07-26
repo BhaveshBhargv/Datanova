@@ -11,8 +11,9 @@ import { cellText, formatDate } from "../lib/format";
 import ProfilePanel from "../components/ProfilePanel";
 import CleaningPanel from "../components/CleaningPanel";
 import ExplorePanel from "../components/ExplorePanel";
+import AssistantPanel from "../components/AssistantPanel";
 
-type Tab = "preview" | "profile" | "explore" | "cleaning";
+type Tab = "preview" | "profile" | "explore" | "assistant" | "cleaning";
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +54,7 @@ export default function DatasetDetailPage() {
     { key: "preview", label: "Preview" },
     { key: "profile", label: "Profile" },
     { key: "explore", label: "Explore" },
+    { key: "assistant", label: "Assistant" },
     { key: "cleaning", label: "Cleaning" },
   ];
 
@@ -136,6 +138,9 @@ export default function DatasetDetailPage() {
             columns={dataset.columns}
             version={version}
           />
+        )}
+        {tab === "assistant" && (
+          <AssistantPanel datasetId={id} columns={dataset.columns} />
         )}
         {tab === "cleaning" && (
           <CleaningPanel

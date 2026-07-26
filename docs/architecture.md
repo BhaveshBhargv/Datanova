@@ -103,6 +103,20 @@ impute missing (mean/median/mode/constant), cast type, and handle outliers (clip
 The LLM provider/model are env-configured (`OPENROUTER_API_KEY`, `LLM_MODEL`, …); the app
 is fully functional without a key.
 
+## Conversational assistant (Phase 5)
+
+- **`services/sql_safety.py`** — shared read-only SQL guard (single statement,
+  SELECT/WITH only, keyword denylist), used by both DB import and the assistant.
+- **`services/assistant.py`** — grounded NL→SQL: loads the current data into a throwaway
+  **in-memory SQLite** table `data`, asks the LLM for a read-only SELECT, validates it,
+  runs it (row-capped) on the isolated copy, then asks the LLM to explain the result.
+  No filesystem/network reach and no access to the application database. Degrades
+  gracefully to a message when no API key is set.
+
+Conversations and messages persist in the `conversations`/`messages` tables. Result
+tables that have one categorical + one numeric column are auto-charted on the frontend
+using the Phase 4 ECharts layer.
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

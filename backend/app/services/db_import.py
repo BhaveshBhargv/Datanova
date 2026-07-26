@@ -5,24 +5,17 @@ parameterized SELECT; raw queries are restricted to a single read-only statement
 """
 from __future__ import annotations
 
-import re
-
 import pandas as pd
 from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import settings
+from app.services.sql_safety import SqlSafetyError, validate_read_only
 
 _DRIVERS = {
     "postgresql": "postgresql+psycopg2",
     "mysql": "mysql+pymysql",
-}
-
-_FORBIDDEN_KEYWORDS = {
-    "insert", "update", "delete", "drop", "alter", "create", "truncate",
-    "grant", "revoke", "attach", "pragma", "exec", "execute", "merge",
-    "replace", "call", "into",
 }
 
 
@@ -70,19 +63,6 @@ def list_tables(engine: Engine) -> list[str]:
         raise DBImportError(f"Could not list tables: {exc.__class__.__name__}") from exc
 
 
-def _validate_read_only(query: str) -> str:
-    q = query.strip().rstrip(";").strip()
-    low = q.lower()
-    if not (low.startswith("select") or low.startswith("with")):
-        raise DBImportError("Only SELECT queries are allowed.")
-    if ";" in q:
-        raise DBImportError("Only a single statement is allowed.")
-    tokens = set(re.findall(r"[a-z_]+", low))
-    if tokens & _FORBIDDEN_KEYWORDS:
-        raise DBImportError("Query contains a forbidden keyword.")
-    return q
-
-
 def import_table(engine: Engine, table: str) -> pd.DataFrame:
     cap = settings.IMPORT_ROW_CAP
     inspector = inspect(engine)
@@ -99,7 +79,10 @@ def import_table(engine: Engine, table: str) -> pd.DataFrame:
 
 def import_query(engine: Engine, query: str) -> pd.DataFrame:
     cap = int(settings.IMPORT_ROW_CAP)
-    inner = _validate_read_only(query)
+    try:
+        inner = validate_read_only(query)
+    except SqlSafetyError as exc:
+        raise DBImportError(str(exc)) from exc
     # cap is an int we control; safe to inline (bound params in LIMIT are not
     # portable across dialects).
     wrapped = f"SELECT * FROM ({inner}) AS _sub LIMIT {cap}"

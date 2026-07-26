@@ -233,3 +233,38 @@ and returns:
 `source` is `"llm"` when `OPENROUTER_API_KEY` is configured and the call succeeds,
 otherwise `"fallback"` (a deterministic rule-based narrative). The endpoint always
 returns `200` with usable text.
+
+# Phase 5
+
+Conversational assistant. The dataset's current data is loaded into an isolated
+in-memory SQLite table named `data`; the LLM writes a **read-only SELECT**, which is
+validated and executed there, then explained. All 🔒, ownership-scoped via the dataset.
+
+### `GET /api/datasets/{id}/conversations`  🔒
+List the dataset's conversation threads.
+
+### `POST /api/datasets/{id}/conversations`  🔒
+Body `{ "title": "Chat" }` → new conversation.
+
+### `GET /api/conversations/{cid}`  🔒
+Conversation with its ordered messages.
+
+### `POST /api/conversations/{cid}/messages`  🔒
+Ask a question. Body `{ "content": "What is average income by region?" }`.
+Persists the user message, runs the assistant, and returns the assistant reply:
+```json
+{
+  "role": "assistant",
+  "content": "The West region has the highest average income…",
+  "sql": "SELECT \"region\", AVG(\"income\") AS avg_income FROM data GROUP BY \"region\" ORDER BY avg_income DESC",
+  "result_columns": ["region", "avg_income"],
+  "result_rows": [{"region":"west","avg_income":55937.7}, "..."],
+  "error": null
+}
+```
+If the generated SQL is not a single read-only statement it is **rejected** (not
+executed) and `error` is set. Without an API key the reply is a graceful message and
+nothing is executed.
+
+### `DELETE /api/conversations/{cid}`  🔒
+`204 No Content`.
