@@ -117,6 +117,20 @@ Conversations and messages persist in the `conversations`/`messages` tables. Res
 tables that have one categorical + one numeric column are auto-charted on the frontend
 using the Phase 4 ECharts layer.
 
+## AutoML (Phase 6)
+
+- **`services/automl.py`** — `detect_problem_type()` (classification vs regression from the
+  target's dtype/cardinality), a scikit-learn `ColumnTransformer` preprocessor (impute + scale
+  numeric, impute + one-hot categorical; datetime and very high-cardinality columns dropped),
+  and `train()` which fits a roster (Logistic/Linear Regression, Decision Tree, Random Forest,
+  XGBoost) on a holdout split, scores each, picks the best, and refits it on all data.
+- The best pipeline is serialized with `joblib` through the `storage` abstraction (`model_path`
+  on the experiment) for reuse in Phase 7 (SHAP) and future predictions.
+- Training runs **synchronously in a threadpool** (`run_in_threadpool`) so it doesn't block the
+  event loop; the request returns the finished leaderboard. Row-capped via `AUTOML_MAX_ROWS`.
+
+Experiments persist in the `experiments` table (config, per-model metrics, best model, status).
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

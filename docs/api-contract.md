@@ -268,3 +268,39 @@ nothing is executed.
 
 ### `DELETE /api/conversations/{cid}`  🔒
 `204 No Content`.
+
+# Phase 6
+
+AutoML. Training runs synchronously in a worker thread and returns the completed
+experiment. All 🔒, ownership-scoped.
+
+### `POST /api/datasets/{id}/experiments`  🔒
+Body `{ "target": "churned", "features"?: [...], "test_size"?: 0.2 }`. Detects the
+problem type, trains the model roster on a holdout split, persists the best pipeline,
+and returns the completed experiment:
+```json
+{
+  "problem_type": "classification",
+  "status": "completed",
+  "target_column": "churned",
+  "feature_columns": ["tenure_months","monthly_charges","age","plan"],
+  "best_model_name": "Random Forest",
+  "results": [
+    {"model":"Logistic Regression","metrics":{"accuracy":0.75,"precision":0.64,"recall":0.59,"f1":0.60,"roc_auc":0.73}},
+    {"model":"Random Forest","metrics":{"accuracy":0.77,"f1":0.62, "...":"..."}}
+  ]
+}
+```
+Roster: Logistic/Linear Regression, Decision Tree, Random Forest, XGBoost. Metrics —
+classification: accuracy, precision, recall, F1 (macro), ROC-AUC (binary); regression:
+R², RMSE, MAE. `400` for an invalid target/features; training failures return the
+experiment with `status:"failed"` and `error`.
+
+### `GET /api/datasets/{id}/experiments`  🔒
+List the dataset's experiments (newest first).
+
+### `GET /api/experiments/{eid}`  🔒
+Experiment detail (leaderboard + best model).
+
+### `DELETE /api/experiments/{eid}`  🔒
+Deletes the experiment and its saved model artifact. `204 No Content`.

@@ -1,4 +1,4 @@
-# AI Data Analytics Platform
+# DataNova
 
 An end-to-end data analytics platform combining data science, machine learning, AI, and
 modern software engineering. Upload datasets or connect a SQL database, then profile,
@@ -24,8 +24,8 @@ analytics assistant — with dashboards and exportable reports.
 3. **Profiling & Cleaning** — missing/duplicates/outliers/types + transformation history ✅
 4. **EDA & Visualization** — auto stats + ECharts + AI chart explanations ✅
 5. **Conversational AI Assistant** — NL Q&A → SQL + business explanations ✅
+6. **AutoML** — auto problem detection, multi-model training, comparison ✅
    _← current_
-6. **AutoML** — auto problem detection, multi-model training, comparison
 7. **Explainable AI** — SHAP feature importance + prediction explanations
 8. **NL→SQL Engine** — safe NL-to-SQL: validate, execute, optimize, explain
 9. **Insights & Recommendations** — trends, anomalies, actionable recommendations
@@ -35,40 +35,75 @@ analytics assistant — with dashboards and exportable reports.
 ## Project structure
 
 ```
-ai-analytics-platform/
-├── backend/     # FastAPI app, SQLAlchemy, Alembic, auth
+DataNova/
+├── backend/     # FastAPI app, SQLAlchemy, Alembic, ML services
 ├── frontend/    # React + TS + Tailwind + ECharts (Vite)
 ├── docs/        # architecture & API contract
 └── docker-compose.yml
 ```
 
-## Quick start (local)
+## Running locally
 
-### 1. Database + backend via Docker
+**Prerequisites:** Python 3.12+, Node 18+. PostgreSQL 16 and/or Docker are optional —
+for a quick local run you can use SQLite (see Option B).
+
+| Service | URL |
+|---------|-----|
+| Backend API | http://localhost:8000 |
+| API docs (Swagger) | http://localhost:8000/docs |
+| Frontend | http://localhost:5173 |
+
+### 1. Configure environment
+
 ```bash
-cp backend/.env.example backend/.env   # then edit secrets
+cp backend/.env.example backend/.env      # Windows: copy backend\.env.example backend\.env
+cp frontend/.env.example frontend/.env
+```
+
+Then edit `backend/.env`:
+
+| Variable | Notes |
+|----------|-------|
+| `SECRET_KEY` | Required. Generate one: `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `DATABASE_URL` | Postgres by default; set to SQLite for Option B (below) |
+| `OPENROUTER_API_KEY` | **Optional.** Without it, AI explanations use a rule-based fallback and the chat assistant is disabled. Get one at https://openrouter.ai/keys |
+| `BACKEND_CORS_ORIGINS` | Must include the frontend origin (`http://localhost:5173` by default) |
+
+> `backend/.env` and `frontend/.env` are gitignored — never commit real secrets.
+> Keep real keys out of `.env.example` (it is committed).
+
+### 2. Backend
+
+**Option A — Docker (PostgreSQL + backend + migrations):**
+```bash
 docker-compose up --build
 ```
-Backend: http://localhost:8000 · Docs: http://localhost:8000/docs
+This starts Postgres, runs `alembic upgrade head`, and serves the API on :8000.
 
-### 2. Backend without Docker
+**Option B — Native, no Docker (SQLite):**
 ```bash
 cd backend
-python -m venv .venv 
-.venv\Scripts\activate
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+python -m venv .venv
+.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
+Set `DATABASE_URL=sqlite:///./dev.db` in `backend/.env`, then create the tables and run:
+```bash
+python -c "from app.core.database import Base, engine; import app.models; Base.metadata.create_all(engine)"
+python -m uvicorn app.main:app --reload
+```
+
+> **Migrations vs. SQLite:** the Alembic migrations use PostgreSQL types (JSONB, UUID),
+> so `alembic upgrade head` targets Postgres. On SQLite, create the schema with the
+> `create_all` one-liner above instead (models use a portable schema at runtime).
+> If you run your own local Postgres, use `alembic upgrade head` instead of `create_all`.
 
 ### 3. Frontend
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
-Frontend: http://localhost:5173
 
 ## Tests
 ```bash

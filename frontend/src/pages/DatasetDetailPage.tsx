@@ -12,8 +12,9 @@ import ProfilePanel from "../components/ProfilePanel";
 import CleaningPanel from "../components/CleaningPanel";
 import ExplorePanel from "../components/ExplorePanel";
 import AssistantPanel from "../components/AssistantPanel";
+import ModelsPanel from "../components/ModelsPanel";
 
-type Tab = "preview" | "profile" | "explore" | "assistant" | "cleaning";
+type Tab = "preview" | "profile" | "explore" | "assistant" | "models" | "cleaning";
 
 export default function DatasetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +56,7 @@ export default function DatasetDetailPage() {
     { key: "profile", label: "Profile" },
     { key: "explore", label: "Explore" },
     { key: "assistant", label: "Assistant" },
+    { key: "models", label: "Models" },
     { key: "cleaning", label: "Cleaning" },
   ];
 
@@ -141,6 +143,9 @@ export default function DatasetDetailPage() {
         )}
         {tab === "assistant" && (
           <AssistantPanel datasetId={id} columns={dataset.columns} />
+        )}
+        {tab === "models" && (
+          <ModelsPanel datasetId={id} columns={dataset.columns} />
         )}
         {tab === "cleaning" && (
           <CleaningPanel

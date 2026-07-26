@@ -2,7 +2,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, connections, conversations, datasets, users
+from app.api.routes import (
+    auth,
+    connections,
+    conversations,
+    datasets,
+    experiments,
+    users,
+)
 from app.core.config import settings
 
 app = FastAPI(
@@ -25,6 +32,7 @@ app.include_router(users.router, prefix=settings.API_PREFIX)
 app.include_router(datasets.router, prefix=settings.API_PREFIX)
 app.include_router(connections.router, prefix=settings.API_PREFIX)
 app.include_router(conversations.router, prefix=settings.API_PREFIX)
+app.include_router(experiments.router, prefix=settings.API_PREFIX)
 
 
 @app.get(f"{settings.API_PREFIX}/health", tags=["health"])
