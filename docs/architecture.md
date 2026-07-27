@@ -156,6 +156,15 @@ Experiments persist in the `experiments` table (config, per-model metrics, best 
 - Each query is persisted to `connection_queries` (per-connection history). SHAP/SQL execution
   runs in a threadpool. Same documented SSRF surface as Phase 2 (user-supplied hosts).
 
+## Insights & recommendations (Phase 9)
+
+- **`services/insights.py`** — deterministic rules over profiling, EDA correlations,
+  distribution/skew, datetime trends, and (when a completed experiment exists) AutoML
+  metrics + **top SHAP drivers** produce categorized, severity-ranked insights with
+  actionable recommendations. Every number is computed, never generated.
+- `narrate.explain_insights()` turns the set into a business summary (LLM + rule-based
+  fallback). Compute on demand — no schema change; Phase 10/11 handle export/persistence.
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

@@ -11,21 +11,34 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.core.storage import storage
 from app.crud import dataset as dataset_crud
+from app.crud import experiment as experiment_crud
 from app.crud import transformation as transformation_crud
 from app.models.dataset import SOURCE_UPLOAD, STATUS_READY, Dataset
 from app.models.user import User
 from app.schemas.chart import ChartData, ChartSpec
 from app.schemas.dataset import DatasetPreview, DatasetRead, DatasetUpdate
 from app.schemas.eda import EdaSummary, ExplainRequest, ExplainResponse
+from app.schemas.insights import InsightsResponse
 from app.schemas.profile import DatasetProfile
 from app.schemas.transformation import TransformationCreate, TransformationRead
-from app.services import charts, cleaning, eda, ingest, narrate, profile, transform
+from app.models.experiment import STATUS_COMPLETED
+from app.services import (
+    charts,
+    cleaning,
+    eda,
+    ingest,
+    insights as insights_service,
+    narrate,
+    profile,
+    transform,
+)
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -248,4 +261,47 @@ def explain(
         )
     except (charts.ChartError, ValueError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    return ExplainResponse(text=text, source=source)
+
+
+# --- Insights & recommendations (Phase 9) ---------------------------------
+
+
+def _latest_completed_experiment(db: Session, dataset_id: uuid.UUID):
+    for exp in experiment_crud.list_for_dataset(db, dataset_id):
+        if exp.status == STATUS_COMPLETED and exp.model_path:
+            return exp
+    return None
+
+
+@router.get("/{dataset_id}/insights", response_model=InsightsResponse)
+async def get_insights(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> InsightsResponse:
+    dataset = _get_or_404(db, user, dataset_id)
+    df = cleaning.load_current(dataset)
+    experiment = _latest_completed_experiment(db, dataset.id)
+    items = await run_in_threadpool(
+        insights_service.generate_insights, df, experiment
+    )
+    return InsightsResponse(
+        total=len(items), counts=insights_service.counts(items), insights=items
+    )
+
+
+@router.post("/{dataset_id}/insights/narrative", response_model=ExplainResponse)
+async def insights_narrative(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ExplainResponse:
+    dataset = _get_or_404(db, user, dataset_id)
+    df = cleaning.load_current(dataset)
+    experiment = _latest_completed_experiment(db, dataset.id)
+    items = await run_in_threadpool(
+        insights_service.generate_insights, df, experiment
+    )
+    text, source = narrate.explain_insights(items)
     return ExplainResponse(text=text, source=source)

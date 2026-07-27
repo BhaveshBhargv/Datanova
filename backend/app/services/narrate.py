@@ -42,6 +42,30 @@ def explain_drivers(
     return (text, "llm") if text else (fallback, "fallback")
 
 
+def explain_insights(insights: list[dict]) -> tuple[str, str]:
+    """Narrate a set of grounded insights into a business summary."""
+    if not insights:
+        return "No notable issues or patterns were found in this dataset.", "fallback"
+
+    top = insights[:6]
+    facts = "\n".join(
+        f"- [{i['severity']}] {i['title']} — {i.get('recommendation') or ''}".strip()
+        for i in top
+    )
+    prompt = (
+        "Summarize these data insights for a business user and highlight the most "
+        f"important actions to take:\n{facts}"
+    )
+    lead = top[0]
+    fallback = (
+        f"The most important finding is: {lead['title']}. "
+        + (f"Recommendation: {lead['recommendation']} " if lead.get("recommendation") else "")
+        + f"In total, {len(insights)} insight(s) were found."
+    )
+    text = llm.generate(prompt, SYSTEM)
+    return (text, "llm") if text else (fallback, "fallback")
+
+
 def explain(df: pd.DataFrame, kind: str, spec: dict | None) -> tuple[str, str]:
     """Return (text, source) where source is 'llm' or 'fallback'."""
     if kind == "overview":

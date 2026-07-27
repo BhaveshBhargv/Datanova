@@ -373,3 +373,32 @@ Recent query history (question, sql, explanation, source, row_count, error, crea
 
 ### `DELETE /api/connections/{cid}/queries/{qid}`  🔒
 Remove a history entry. `204 No Content`.
+
+# Phase 9
+
+Auto-generated insights & recommendations. Grounded (rule-based) findings, incorporating
+the latest completed AutoML experiment + SHAP when present. All 🔒, ownership-scoped.
+
+### `GET /api/datasets/{id}/insights`  🔒
+```json
+{
+  "total": 5,
+  "counts": { "critical": 1, "warning": 2, "info": 2 },
+  "insights": [
+    { "category": "data_quality", "severity": "critical",
+      "title": "'mostly_missing' is 96.77% missing",
+      "detail": "58 of 62 values are missing.",
+      "recommendation": "Impute (mean/median/mode) or drop this column." },
+    { "category": "model", "severity": "info",
+      "title": "Top predictors of 'churned': monthly_charges, tenure_months, age",
+      "detail": "These features most influence the model's predictions (SHAP).",
+      "recommendation": "Prioritize 'monthly_charges' for interventions and monitoring." }
+  ]
+}
+```
+Categories: `data_quality`, `statistical`, `anomaly`, `trend`, `model`. Severity-ranked
+(critical → warning → info). Every claim is computed, not generated.
+
+### `POST /api/datasets/{id}/insights/narrative`  🔒
+LLM business summary of the insights → `{ "text": "…", "source": "llm" | "fallback" }`
+(deterministic fallback when no API key or the model is unavailable).
