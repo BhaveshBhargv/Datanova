@@ -12,6 +12,7 @@ analytics assistant — with dashboards and exportable reports.
 | Backend | FastAPI, SQLAlchemy, Alembic |
 | Database | PostgreSQL |
 | Data science | Pandas, NumPy, scikit-learn, XGBoost, SHAP |
+| Reporting | ReportLab + matplotlib (PDF), openpyxl (Excel) |
 | Frontend | React, TypeScript, Tailwind CSS, Apache ECharts |
 | AI / LLM | OpenRouter (OpenAI-compatible), configurable model |
 | Auth | JWT (access + refresh) |
@@ -28,9 +29,9 @@ analytics assistant — with dashboards and exportable reports.
 7. **Explainable AI** — SHAP feature importance + prediction explanations ✅
 8. **NL→SQL Engine** — safe NL-to-SQL: validate, execute, optimize, explain ✅
 9. **Insights & Recommendations** — trends, anomalies, actionable recommendations ✅
-   _← current_
-10. **Reporting & Export** — PDF/Excel reports with visuals, stats, AI summaries
-11. **Analytics Workspace** — manage datasets, dashboards, saved analyses, history
+10. **Reporting & Export** — PDF/Excel reports with visuals, stats, AI summaries ✅
+11. **Analytics Workspace** — cross-resource home: datasets, models, saved analyses, history ✅
+    _← current — all 11 phases complete_
 
 ## Project structure
 

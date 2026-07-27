@@ -8,6 +8,7 @@ from fastapi import (
     File,
     HTTPException,
     Query,
+    Response,
     UploadFile,
     status,
 )
@@ -37,6 +38,9 @@ from app.services import (
     insights as insights_service,
     narrate,
     profile,
+    report as report_service,
+    report_excel,
+    report_pdf,
     transform,
 )
 
@@ -305,3 +309,55 @@ async def insights_narrative(
     )
     text, source = narrate.explain_insights(items)
     return ExplainResponse(text=text, source=source)
+
+
+# --- Reporting & export (Phase 10) ----------------------------------------
+
+
+def _safe_filename(name: str) -> str:
+    keep = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in name)
+    return keep or "report"
+
+
+@router.get("/{dataset_id}/report")
+async def report_json(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    dataset = _get_or_404(db, user, dataset_id)
+    return await run_in_threadpool(report_service.assemble, db, dataset)
+
+
+@router.get("/{dataset_id}/report/pdf")
+async def report_pdf_download(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    dataset = _get_or_404(db, user, dataset_id)
+    report = await run_in_threadpool(report_service.assemble, db, dataset)
+    pdf = await run_in_threadpool(report_pdf.build_pdf, report)
+    filename = f"{_safe_filename(dataset.name)}_report.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{dataset_id}/report/excel")
+async def report_excel_download(
+    dataset_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    dataset = _get_or_404(db, user, dataset_id)
+    report = await run_in_threadpool(report_service.assemble, db, dataset)
+    xlsx = await run_in_threadpool(report_excel.build_excel, report)
+    filename = f"{_safe_filename(dataset.name)}_report.xlsx"
+    return Response(
+        content=xlsx,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

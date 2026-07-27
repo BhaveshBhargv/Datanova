@@ -54,7 +54,8 @@ export default function DatasetsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold text-slate-900">Datasets</h1>
+      <p className="eyebrow">Data</p>
+      <h1 className="mt-1 font-display text-3xl font-bold text-ink">Datasets</h1>
       <p className="mt-1 text-sm text-slate-500">
         Upload a CSV or Excel file, or import from a database connection.
       </p>
@@ -68,10 +69,10 @@ export default function DatasetsPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
-        className={`mt-6 cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
+        className={`mt-6 cursor-pointer rounded-2xl border-2 border-dashed p-10 text-center transition ${
           dragging
-            ? "border-indigo-400 bg-indigo-50"
-            : "border-slate-300 bg-white hover:border-indigo-300"
+            ? "border-nova-400 bg-nova-50"
+            : "border-line bg-white hover:border-nova-300 hover:bg-nova-50/40"
         }`}
       >
         <input

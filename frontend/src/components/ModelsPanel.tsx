@@ -74,17 +74,18 @@ export default function ModelsPanel({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
       {/* Config */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-slate-700">Train models</h3>
+      <div className="card h-fit p-5">
+        <p className="eyebrow">AutoML</p>
+        <h3 className="mt-1 font-display text-lg font-bold text-ink">Train models</h3>
 
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-600">Target column</span>
           <select
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="input mt-1.5"
           >
             {colNames.map((c) => (
               <option key={c} value={c}>
@@ -95,18 +96,20 @@ export default function ModelsPanel({
         </label>
 
         <div className="mt-4">
-          <span className="text-sm font-medium text-slate-600">
-            Exclude features
-          </span>
-          <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+          <span className="text-sm font-medium text-slate-600">Exclude features</span>
+          <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-line p-2">
             {colNames
               .filter((c) => c !== target)
               .map((c) => (
-                <label key={c} className="flex items-center gap-2 text-sm">
+                <label
+                  key={c}
+                  className="flex items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-50"
+                >
                   <input
                     type="checkbox"
                     checked={excluded.has(c)}
                     onChange={() => toggleExclude(c)}
+                    className="accent-nova-600"
                   />
                   {c}
                 </label>
@@ -116,7 +119,7 @@ export default function ModelsPanel({
 
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-600">
-            Test size: {testSize.toFixed(2)}
+            Test size · <span className="font-mono text-nova-600">{testSize.toFixed(2)}</span>
           </span>
           <input
             type="range"
@@ -125,37 +128,40 @@ export default function ModelsPanel({
             step={0.05}
             value={testSize}
             onChange={(e) => setTestSize(Number(e.target.value))}
-            className="mt-1 w-full"
+            className="mt-2 w-full accent-nova-600"
           />
         </label>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-nova-700">{error}</p>}
         <button
           onClick={train}
           disabled={running || !target}
-          className="mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="btn-nova mt-4 w-full disabled:opacity-60"
         >
-          {running ? "Training models…" : "Train models"}
+          {running ? "Training…" : "Train models"}
         </button>
 
         {history.length > 0 && (
-          <div className="mt-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              History
-            </div>
-            <ul className="mt-2 space-y-1 text-sm">
+          <div className="mt-6 border-t border-line pt-4">
+            <p className="eyebrow">History</p>
+            <ul className="mt-2 space-y-1">
               {history.map((h) => (
                 <li key={h.id} className="flex items-center justify-between gap-2">
                   <button
                     onClick={() => setExperiment(h)}
-                    className="truncate text-left text-indigo-600 hover:underline"
+                    className={`truncate text-left text-sm hover:text-nova-700 ${
+                      experiment?.id === h.id ? "font-medium text-nova-700" : "text-slate-600"
+                    }`}
                     title={`${h.target_column} · ${h.problem_type}`}
                   >
-                    {h.target_column} ({h.problem_type})
+                    {h.target_column}{" "}
+                    <span className="font-mono text-xs text-slate-400">
+                      {h.problem_type}
+                    </span>
                   </button>
                   <button
                     onClick={() => onDelete(h.id)}
-                    className="text-slate-400 hover:text-red-600"
+                    className="text-slate-300 hover:text-red-500"
                   >
                     ✕
                   </button>
@@ -167,16 +173,17 @@ export default function ModelsPanel({
       </div>
 
       {/* Results */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div>
         {running && (
-          <p className="text-sm text-slate-500">
+          <div className="card flex items-center gap-3 p-8 text-sm text-slate-500">
+            <span className="h-2 w-2 animate-spark-pulse rounded-full bg-nova-500" />
             Detecting the problem type and training the model roster…
-          </p>
+          </div>
         )}
         {!running && !experiment && (
-          <p className="text-sm text-slate-400">
+          <div className="card p-10 text-center text-sm text-slate-400">
             Choose a target column and train to see a model leaderboard.
-          </p>
+          </div>
         )}
         {experiment && <Leaderboard experiment={experiment} />}
         {experiment?.status === "completed" && (
@@ -194,8 +201,8 @@ export default function ModelsPanel({
 function Leaderboard({ experiment }: { experiment: Experiment }) {
   if (experiment.status === "failed") {
     return (
-      <div>
-        <Badge experiment={experiment} />
+      <div className="card border-l-4 border-l-red-500 p-5">
+        <Meta experiment={experiment} />
         <p className="mt-3 text-sm text-red-600">{experiment.error}</p>
       </div>
     );
@@ -204,37 +211,67 @@ function Leaderboard({ experiment }: { experiment: Experiment }) {
   const metricKeys = (METRIC_ORDER[experiment.problem_type] ?? []).filter((k) =>
     results.some((r) => k in r.metrics),
   );
+  const primary = experiment.problem_type === "classification" ? "f1" : "r2";
+  const best = results.find((r) => r.model === experiment.best_model_name);
 
   return (
-    <div>
-      <Badge experiment={experiment} />
-      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
+    <div className="card p-5">
+      <Meta experiment={experiment} />
+
+      {best && (
+        <div className="mt-4 flex items-end justify-between rounded-xl bg-nova-50 px-4 py-3">
+          <div>
+            <p className="eyebrow text-nova-500">Best model</p>
+            <p className="mt-0.5 font-display text-lg font-bold text-ink">
+              {best.model}
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="font-display text-2xl font-bold tabular-nums text-nova-700">
+              {fmt(best.metrics[primary])}
+            </div>
+            <div className="eyebrow text-nova-500">{primary}</div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Model</th>
+          <thead>
+            <tr className="border-b border-line text-left">
+              <th className="px-3 py-2 font-mono text-[11px] uppercase tracking-wider text-slate-400">
+                Model
+              </th>
               {metricKeys.map((k) => (
-                <th key={k} className="px-4 py-2 font-medium">
+                <th
+                  key={k}
+                  className="px-3 py-2 text-right font-mono text-[11px] uppercase tracking-wider text-slate-400"
+                >
                   {k}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {results.map((r) => {
               const isBest = r.model === experiment.best_model_name;
               return (
-                <tr key={r.model} className={isBest ? "bg-indigo-50" : ""}>
-                  <td className="px-4 py-2 font-medium text-slate-800">
+                <tr key={r.model} className={isBest ? "bg-nova-50/50" : ""}>
+                  <td className="px-3 py-2.5 font-medium text-ink">
                     {r.model}
                     {isBest && (
-                      <span className="ml-2 rounded bg-indigo-600 px-1.5 py-0.5 text-xs text-white">
+                      <span className="ml-2 rounded bg-nova-600 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
                         best
                       </span>
                     )}
                   </td>
                   {metricKeys.map((k) => (
-                    <td key={k} className="px-4 py-2 text-slate-600">
+                    <td
+                      key={k}
+                      className={`px-3 py-2.5 text-right font-mono text-xs ${
+                        k === primary ? "font-bold text-ink" : "text-slate-500"
+                      }`}
+                    >
                       {fmt(r.metrics[k])}
                     </td>
                   ))}
@@ -248,24 +285,16 @@ function Leaderboard({ experiment }: { experiment: Experiment }) {
   );
 }
 
-function Badge({ experiment }: { experiment: Experiment }) {
+function Meta({ experiment }: { experiment: Experiment }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+    <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-slate-400">
+      <span className="rounded bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
         {experiment.problem_type}
       </span>
-      <span className="text-slate-500">
-        target: <span className="font-medium">{experiment.target_column}</span>
-      </span>
-      <span className="text-slate-400">·</span>
-      <span className="text-slate-500">
-        {experiment.feature_columns.length} features · test {experiment.test_size}
-      </span>
-      {experiment.completed_at && (
-        <span className="text-slate-400">
-          · {formatDate(experiment.completed_at)}
-        </span>
-      )}
+      <span>target {experiment.target_column}</span>
+      <span>· {experiment.feature_columns.length} features</span>
+      <span>· test {experiment.test_size}</span>
+      {experiment.completed_at && <span>· {formatDate(experiment.completed_at)}</span>}
     </div>
   );
 }

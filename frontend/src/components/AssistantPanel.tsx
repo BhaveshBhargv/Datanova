@@ -9,6 +9,7 @@ import { cellText } from "../lib/format";
 import { buildOption } from "../lib/echartsOption";
 import type { ChartData } from "../lib/eda";
 import Chart from "./Chart";
+import { NovaMark } from "./brand/NovaMark";
 
 const NUMERIC = new Set(["integer", "float"]);
 
@@ -72,17 +73,26 @@ export default function AssistantPanel({
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-320px)] min-h-[420px] max-w-3xl flex-col rounded-xl border border-slate-200 bg-white">
+    <div className="mx-auto flex h-[calc(100vh-300px)] min-h-[440px] max-w-3xl flex-col card overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-line px-5 py-3">
+        <NovaMark size={18} />
+        <span className="eyebrow">Data assistant</span>
+      </div>
+
       <div className="flex-1 space-y-4 overflow-y-auto p-5">
         {messages.length === 0 && (
-          <div className="text-sm text-slate-500">
-            <p>Ask a question about this dataset in plain English.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <NovaMark size={30} />
+            <p className="mt-3 max-w-xs text-sm text-slate-500">
+              Ask a question about this dataset in plain English — I'll write and run
+              the SQL.
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
               {suggestions.map((s) => (
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                  className="rounded-full border border-line px-3 py-1.5 text-sm text-slate-600 transition hover:border-nova-300 hover:text-nova-700"
                 >
                   {s}
                 </button>
@@ -96,7 +106,10 @@ export default function AssistantPanel({
         ))}
 
         {busy && (
-          <div className="text-sm text-slate-400">The assistant is thinking…</div>
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <span className="h-1.5 w-1.5 animate-spark-pulse rounded-full bg-nova-500" />
+            The assistant is thinking…
+          </div>
         )}
         <div ref={endRef} />
       </div>
@@ -106,19 +119,15 @@ export default function AssistantPanel({
           e.preventDefault();
           send(input);
         }}
-        className="flex gap-2 border-t border-slate-200 p-3"
+        className="flex gap-2 border-t border-line p-3"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your data…"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          className="input flex-1"
         />
-        <button
-          type="submit"
-          disabled={busy || !input.trim()}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-        >
+        <button type="submit" disabled={busy || !input.trim()} className="btn-nova disabled:opacity-50">
           Send
         </button>
       </form>
@@ -130,7 +139,7 @@ function MessageBubble({ message }: { message: AssistantMessage }) {
   if (message.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-indigo-600 px-4 py-2 text-sm text-white">
+        <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-nova-600 px-4 py-2 text-sm text-white">
           {message.content}
         </div>
       </div>
@@ -144,7 +153,7 @@ function MessageBubble({ message }: { message: AssistantMessage }) {
   return (
     <div className="flex justify-start">
       <div className="max-w-[92%] space-y-3">
-        <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-800">
+        <div className="rounded-2xl rounded-bl-sm bg-slate-100 px-4 py-2 text-sm text-ink">
           {message.content}
         </div>
 
@@ -155,11 +164,11 @@ function MessageBubble({ message }: { message: AssistantMessage }) {
         )}
 
         {message.sql && (
-          <details className="rounded-lg border border-slate-200 bg-white">
-            <summary className="cursor-pointer px-3 py-1.5 text-xs font-medium text-slate-500">
+          <details className="overflow-hidden rounded-lg border border-line">
+            <summary className="cursor-pointer bg-white px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-slate-400">
               View SQL
             </summary>
-            <pre className="overflow-x-auto px-3 pb-3 text-xs text-slate-700">
+            <pre className="overflow-x-auto bg-ink px-3 py-3 font-mono text-xs text-slate-100">
               {message.sql}
             </pre>
           </details>

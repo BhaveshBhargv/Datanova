@@ -402,3 +402,37 @@ Categories: `data_quality`, `statistical`, `anomaly`, `trend`, `model`. Severity
 ### `POST /api/datasets/{id}/insights/narrative`  🔒
 LLM business summary of the insights → `{ "text": "…", "source": "llm" | "fallback" }`
 (deterministic fallback when no API key or the model is unavailable).
+
+# Phase 10
+
+Comprehensive report assembled from all prior phases (quality, EDA, insights, model +
+SHAP, preview) with export. All 🔒, ownership-scoped.
+
+### `GET /api/datasets/{id}/report`  🔒
+JSON preview of report contents: `dataset`, `profile`, `eda`, `experiment`, `importance`,
+`insights`, `insights_counts`, `summary` (AI overview + insights narrative, each with a
+`*_source`), and `preview`.
+
+### `GET /api/datasets/{id}/report/pdf`  🔒
+`application/pdf` download (ReportLab + matplotlib charts: correlation heatmap, SHAP
+feature importance). `Content-Disposition: attachment; filename="<name>_report.pdf"`.
+
+### `GET /api/datasets/{id}/report/excel`  🔒
+`.xlsx` download (openpyxl) with sheets: Overview, Column Profile, Correlations, Insights,
+Model Metrics (when a model exists), Data Preview.
+
+# Phase 11
+
+Analytics workspace — a cross-resource summary for the user's home. 🔒, ownership-scoped.
+
+### `GET /api/workspace/summary`  🔒
+Aggregates the signed-in user's resources:
+```json
+{
+  "counts": { "datasets": 4, "connections": 1, "models": 1, "chats": 2 },
+  "recent_datasets": [{ "id": "…", "name": "churn", "n_rows": 220, "n_columns": 5, "source_type": "upload", "created_at": "…" }],
+  "recent_models": [{ "id": "…", "dataset_id": "…", "dataset_name": "churn", "target": "churned", "problem_type": "classification", "best_model_name": "Random Forest", "created_at": "…" }],
+  "recent_queries": [{ "id": "…", "connection_id": "…", "connection_name": "Demo Shop", "question": "…", "created_at": "…" }]
+}
+```
+`models` counts completed experiments across the user's datasets; `chats` counts conversations.

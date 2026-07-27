@@ -1,7 +1,7 @@
 import type { ChartData } from "./eda";
 import type { EChartsOption } from "echarts";
 
-const INDIGO = "#4f46e5";
+const INDIGO = "#C51E8A"; // nova-600 (plasma accent)
 
 export function buildOption(cd: ChartData): EChartsOption {
   const title: EChartsOption["title"] = {

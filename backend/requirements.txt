@@ -31,6 +31,10 @@ xgboost==2.1.4
 joblib==1.4.2
 shap==0.52.0
 
+# --- Reporting / export ---
+reportlab==5.0.0
+matplotlib==3.11.1
+
 # --- External database drivers ---
 pymysql==1.1.1
 

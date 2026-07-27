@@ -124,18 +124,18 @@ export default function ExplorePanel({
   return (
     <div className="space-y-6">
       {/* AI overview */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">AI overview</h3>
-          <button
-            onClick={onExplainOverview}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500"
-          >
+      <div className="card p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="eyebrow">Exploratory analysis</p>
+            <h3 className="mt-1 font-display text-lg font-bold text-ink">AI overview</h3>
+          </div>
+          <button onClick={onExplainOverview} className="btn-nova">
             Explain this dataset
           </button>
         </div>
         {overview ? (
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          <p className="mt-3 text-sm leading-relaxed text-ink">
             {overview.text} <SourceBadge source={overview.source} />
           </p>
         ) : (
@@ -148,15 +148,13 @@ export default function ExplorePanel({
       {/* Recommended charts */}
       {summary && summary.recommended_charts.length > 0 && (
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Recommended
-          </div>
+          <p className="eyebrow">Recommended</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {summary.recommended_charts.map((rec, i) => (
               <button
                 key={i}
                 onClick={() => loadRecommended(rec)}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+                className="rounded-full border border-line bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:border-nova-300 hover:text-nova-700"
                 title={rec.reason}
               >
                 {CHART_LABELS[rec.type]}
@@ -170,8 +168,8 @@ export default function ExplorePanel({
 
       {/* Builder + chart */}
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-slate-700">Chart builder</h3>
+        <div className="card h-fit p-5">
+          <p className="eyebrow">Chart builder</p>
           <Select
             label="Chart type"
             value={type}
@@ -214,14 +212,14 @@ export default function ExplorePanel({
           <button
             onClick={() => render(specFor(type))}
             disabled={busy}
-            className="mt-4 w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="btn-nova mt-4 w-full disabled:opacity-60"
           >
             {busy ? "Rendering…" : "Render chart"}
           </button>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          {error && <p className="text-sm text-red-600">{error}</p>}
+        <div className="card p-5">
+          {error && <p className="text-sm text-nova-700">{error}</p>}
           {chart ? (
             <>
               <Chart option={buildOption(chart)} />
@@ -229,13 +227,13 @@ export default function ExplorePanel({
                 <button
                   onClick={onExplainChart}
                   disabled={explaining}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                  className="btn-ghost !px-3 !py-1.5 disabled:opacity-60"
                 >
                   {explaining ? "Explaining…" : "Explain this chart"}
                 </button>
               </div>
               {chartExplain && (
-                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                <p className="mt-3 rounded-xl bg-nova-50/60 p-3 text-sm leading-relaxed text-ink">
                   {chartExplain.text} <SourceBadge source={chartExplain.source} />
                 </p>
               )}
@@ -253,9 +251,7 @@ function SourceBadge({ source }: { source: "llm" | "fallback" }) {
   return (
     <span
       className={`ml-1 rounded px-1.5 py-0.5 text-xs font-medium ${
-        source === "llm"
-          ? "bg-indigo-50 text-indigo-700"
-          : "bg-slate-100 text-slate-500"
+        source === "llm" ? "bg-white text-nova-700 ring-1 ring-nova-100" : "bg-slate-100 text-slate-500"
       }`}
     >
       {source === "llm" ? "AI" : "rule-based"}
@@ -280,7 +276,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        className="input mt-1.5"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

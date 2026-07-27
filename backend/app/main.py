@@ -9,6 +9,7 @@ from app.api.routes import (
     datasets,
     experiments,
     users,
+    workspace,
 )
 from app.core.config import settings
 
@@ -33,6 +34,7 @@ app.include_router(datasets.router, prefix=settings.API_PREFIX)
 app.include_router(connections.router, prefix=settings.API_PREFIX)
 app.include_router(conversations.router, prefix=settings.API_PREFIX)
 app.include_router(experiments.router, prefix=settings.API_PREFIX)
+app.include_router(workspace.router, prefix=settings.API_PREFIX)
 
 
 @app.get(f"{settings.API_PREFIX}/health", tags=["health"])

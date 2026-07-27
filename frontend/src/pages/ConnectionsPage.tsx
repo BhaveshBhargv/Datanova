@@ -73,7 +73,8 @@ export default function ConnectionsPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold text-slate-900">Connections</h1>
+      <p className="eyebrow">Sources</p>
+      <h1 className="mt-1 font-display text-3xl font-bold text-ink">Connections</h1>
       <p className="mt-1 text-sm text-slate-500">
         Connect a SQL database, then import tables or query results as datasets.
       </p>

@@ -57,13 +57,17 @@ export default function ConnectionQueryPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link to="/connections" className="text-sm text-indigo-600 hover:underline">
-        ← Connections
+      <Link
+        to="/connections"
+        className="font-mono text-xs text-slate-400 hover:text-nova-600"
+      >
+        ← connections
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold text-slate-900">
+      <p className="eyebrow mt-3">Natural language → SQL</p>
+      <h1 className="mt-1 font-display text-3xl font-bold text-ink">
         Query with AI
         {connection && (
-          <span className="ml-2 text-base font-normal text-slate-500">
+          <span className="ml-2 font-mono text-sm font-normal text-slate-400">
             {connection.name} · {connection.dialect}
           </span>
         )}
@@ -71,24 +75,21 @@ export default function ConnectionQueryPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
         {/* Schema sidebar */}
-        <aside className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Schema
-          </div>
+        <aside className="card h-fit p-4">
+          <p className="eyebrow">Schema</p>
           {schemaError ? (
-            <p className="mt-2 text-sm text-red-600">{schemaError}</p>
+            <p className="mt-2 text-sm text-nova-700">{schemaError}</p>
           ) : (
-            <div className="mt-2 max-h-[70vh] space-y-3 overflow-y-auto">
+            <div className="mt-3 max-h-[70vh] space-y-2 overflow-y-auto">
               {schema.map((t) => (
                 <details key={t.table} className="text-sm">
-                  <summary className="cursor-pointer font-medium text-slate-700">
+                  <summary className="cursor-pointer font-medium text-ink hover:text-nova-700">
                     {t.table}
                   </summary>
-                  <ul className="ml-3 mt-1 space-y-0.5 text-xs text-slate-500">
+                  <ul className="ml-3 mt-1 space-y-0.5 border-l border-line pl-3 font-mono text-[11px] text-slate-500">
                     {t.columns.map((c) => (
                       <li key={c.name}>
-                        {c.name}{" "}
-                        <span className="text-slate-400">{c.type}</span>
+                        {c.name} <span className="text-slate-400">{c.type}</span>
                       </li>
                     ))}
                   </ul>
@@ -105,13 +106,9 @@ export default function ConnectionQueryPage() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask a question about this database…"
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+              className="input flex-1"
             />
-            <button
-              type="submit"
-              disabled={busy || !question.trim()}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-            >
+            <button type="submit" disabled={busy || !question.trim()} className="btn-nova disabled:opacity-50">
               {busy ? "Running…" : "Ask"}
             </button>
           </form>

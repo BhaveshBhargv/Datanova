@@ -25,7 +25,7 @@ function importanceOption(importance: FeatureImportance[]): EChartsOption {
       {
         type: "bar",
         data: rows.map((r) => r.importance),
-        itemStyle: { color: "#4f46e5" },
+        itemStyle: { color: "#C51E8A" },
       },
     ],
   };
@@ -100,63 +100,61 @@ export default function ExplainabilitySection({
   }
 
   return (
-    <div className="mt-6 border-t border-slate-200 pt-6">
+    <div className="card mt-6 p-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">
-          Explainability (SHAP)
-        </h3>
+        <div>
+          <p className="eyebrow">Explainable AI</p>
+          <h3 className="mt-1 font-display text-lg font-bold text-ink">
+            SHAP explanations
+          </h3>
+        </div>
         {!importance && (
           <button
             onClick={computeImportance}
             disabled={loading}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="btn-nova disabled:opacity-60"
           >
-            {loading ? "Computing…" : "Compute SHAP explanations"}
+            {loading ? "Computing…" : "Compute SHAP"}
           </button>
         )}
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-nova-700">{error}</p>}
 
       {importance && (
-        <div className="mt-4 space-y-6">
+        <div className="mt-5 space-y-8">
           {/* Global importance */}
           <div>
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-slate-600">
-                Global feature importance
-              </h4>
+              <p className="eyebrow">
+                Feature importance · {importance.sample_size} rows
+              </p>
               <button
                 onClick={narrate}
                 disabled={narrating}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                className="btn-ghost !px-3 !py-1.5 text-xs disabled:opacity-60"
               >
                 {narrating ? "Explaining…" : "Explain drivers (AI)"}
               </button>
-            </div>
-            <div className="mt-1 text-xs text-slate-400">
-              Computed on {importance.sample_size} rows
             </div>
             <Chart
               option={importanceOption(importance.importance)}
               height={Math.max(180, importance.importance.length * 40)}
             />
             {narrative && (
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              <p className="mt-2 rounded-xl bg-nova-50/60 p-3 text-sm leading-relaxed text-ink">
                 {narrative.text} <SourceBadge source={narrative.source} />
               </p>
             )}
           </div>
 
           {/* Per-prediction explanation */}
-          <div>
-            <h4 className="text-sm font-medium text-slate-600">
-              Explain a prediction
-            </h4>
+          <div className="border-t border-line pt-6">
+            <p className="eyebrow">Explain a prediction</p>
             <div className="mt-2 flex items-end gap-3">
               <label className="block">
                 <span className="text-xs text-slate-500">
-                  Row index (0–{Math.max(0, rowCount - 1)})
+                  Row index · 0–{Math.max(0, rowCount - 1)}
                 </span>
                 <input
                   type="number"
@@ -164,13 +162,13 @@ export default function ExplainabilitySection({
                   max={rowCount - 1}
                   value={index}
                   onChange={(e) => setIndex(Number(e.target.value))}
-                  className="mt-1 w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+                  className="input mt-1 w-28 font-mono"
                 />
               </label>
               <button
                 onClick={explainRow}
                 disabled={busyRow}
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+                className="btn-nova disabled:opacity-60"
               >
                 {busyRow ? "Explaining…" : "Explain row"}
               </button>
@@ -179,18 +177,18 @@ export default function ExplainabilitySection({
             {prediction && (
               <div className="mt-4">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="text-slate-500">Prediction:</span>
-                  <span className="rounded bg-indigo-600 px-2 py-0.5 font-medium text-white">
+                  <span className="eyebrow">Prediction</span>
+                  <span className="rounded bg-nova-600 px-2 py-0.5 font-mono text-xs font-medium text-white">
                     {cellText(prediction.predicted_label ?? prediction.prediction)}
                   </span>
                   {prediction.proba && (
-                    <span className="text-xs text-slate-500">
+                    <span className="font-mono text-xs text-slate-500">
                       {Object.entries(prediction.proba)
-                        .map(([k, v]) => `${k}: ${(v * 100).toFixed(0)}%`)
+                        .map(([k, v]) => `${k} ${(v * 100).toFixed(0)}%`)
                         .join(" · ")}
                     </span>
                   )}
-                  <span className="text-xs text-slate-400">
+                  <span className="font-mono text-xs text-slate-400">
                     base {prediction.base_value.toFixed(3)}
                   </span>
                 </div>
@@ -198,8 +196,13 @@ export default function ExplainabilitySection({
                   option={contributionsOption(prediction.contributions)}
                   height={Math.max(180, prediction.contributions.length * 40)}
                 />
-                <div className="mt-1 text-xs text-slate-400">
-                  Green pushes the prediction up, red pushes it down.
+                <div className="mt-1 flex items-center gap-3 font-mono text-[11px] text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-sm bg-emerald-500" /> pushes up
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-sm bg-red-500" /> pushes down
+                  </span>
                 </div>
               </div>
             )}
@@ -215,7 +218,7 @@ function SourceBadge({ source }: { source: "llm" | "fallback" }) {
     <span
       className={`ml-1 rounded px-1.5 py-0.5 text-xs font-medium ${
         source === "llm"
-          ? "bg-indigo-50 text-indigo-700"
+          ? "bg-white text-nova-700"
           : "bg-slate-100 text-slate-500"
       }`}
     >

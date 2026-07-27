@@ -109,15 +109,16 @@ export default function CleaningPanel({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Add step */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="text-sm font-semibold text-slate-700">Add a cleaning step</h3>
+      <div className="card h-fit p-5">
+        <p className="eyebrow">Transform</p>
+        <h3 className="mt-1 font-display text-lg font-bold text-ink">Add a cleaning step</h3>
 
         <label className="mt-4 block">
           <span className="text-sm font-medium text-slate-600">Operation</span>
           <select
             value={op}
             onChange={(e) => setOp(e.target.value as Operation)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="input mt-1.5"
           >
             {OPERATIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -143,11 +144,12 @@ export default function CleaningPanel({
           {op === "drop_columns" && (
             <div>
               <span className="text-sm font-medium text-slate-600">Columns</span>
-              <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+              <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-line p-2">
                 {colNames.map((name) => (
-                  <label key={name} className="flex items-center gap-2 text-sm">
+                  <label key={name} className="flex items-center gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-50">
                     <input
                       type="checkbox"
+                      className="accent-nova-600"
                       checked={selectedCols.includes(name)}
                       onChange={(e) =>
                         setSelectedCols((s) =>
@@ -182,7 +184,7 @@ export default function CleaningPanel({
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="input mt-1.5"
               />
             </label>
           )}
@@ -204,7 +206,7 @@ export default function CleaningPanel({
                   <input
                     value={constValue}
                     onChange={(e) => setConstValue(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="input mt-1.5"
                   />
                 </label>
               )}
@@ -233,34 +235,33 @@ export default function CleaningPanel({
           )}
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-        <button
-          onClick={onApply}
-          disabled={busy}
-          className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
-        >
+        {error && <p className="mt-3 text-sm text-nova-700">{error}</p>}
+        <button onClick={onApply} disabled={busy} className="btn-nova mt-4 disabled:opacity-60">
           {busy ? "Applying…" : "Apply step"}
         </button>
       </div>
 
       {/* History */}
-      <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="card h-fit p-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">
-            Transformation history
-          </h3>
+          <div>
+            <p className="eyebrow">Pipeline</p>
+            <h3 className="mt-1 font-display text-lg font-bold text-ink">
+              Transformation history
+            </h3>
+          </div>
           <div className="flex gap-3 text-sm">
             <button
               onClick={onUndo}
               disabled={history.length === 0}
-              className="text-slate-500 hover:text-slate-800 disabled:opacity-40"
+              className="font-medium text-slate-500 hover:text-ink disabled:opacity-40"
             >
               Undo
             </button>
             <button
               onClick={onReset}
               disabled={history.length === 0}
-              className="text-slate-400 hover:text-red-600 disabled:opacity-40"
+              className="font-medium text-slate-400 hover:text-red-600 disabled:opacity-40"
             >
               Reset
             </button>
@@ -269,22 +270,19 @@ export default function CleaningPanel({
 
         {history.length === 0 ? (
           <p className="mt-4 text-sm text-slate-400">
-            No steps applied. The dataset is in its original state.
+            No steps applied — the dataset is in its original state.
           </p>
         ) : (
-          <ol className="mt-4 space-y-2">
+          <ol className="relative mt-4 space-y-2 before:absolute before:left-[15px] before:top-3 before:h-[calc(100%-24px)] before:w-px before:bg-line">
             {history.map((t, i) => (
-              <li
-                key={t.id}
-                className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm"
-              >
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-medium text-indigo-700">
+              <li key={t.id} className="relative flex items-start gap-3 text-sm">
+                <span className="z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-nova-50 font-mono text-xs font-bold text-nova-700 ring-4 ring-white">
                   {i + 1}
                 </span>
-                <div>
-                  <div className="font-medium text-slate-700">{t.operation}</div>
+                <div className="flex-1 rounded-lg border border-line bg-white px-3 py-2">
+                  <div className="font-medium text-ink">{t.operation}</div>
                   {Object.keys(t.params).length > 0 && (
-                    <div className="text-xs text-slate-500">
+                    <div className="mt-0.5 font-mono text-[11px] text-slate-400">
                       {JSON.stringify(t.params)}
                     </div>
                   )}
@@ -315,7 +313,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+        className="input mt-1.5"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

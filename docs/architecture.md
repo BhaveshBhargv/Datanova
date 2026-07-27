@@ -165,6 +165,36 @@ Experiments persist in the `experiments` table (config, per-model metrics, best 
 - `narrate.explain_insights()` turns the set into a business summary (LLM + rule-based
   fallback). Compute on demand — no schema change; Phase 10/11 handle export/persistence.
 
+## Reporting & export (Phase 10)
+
+- **`services/report.py`** — `assemble()` gathers every section (profile, EDA, insights,
+  latest AutoML experiment + SHAP importances, AI narratives, data preview) into one dict.
+- **`services/report_pdf.py`** — renders it to PDF with **ReportLab** (headings, tables,
+  paragraphs) and **matplotlib** charts (correlation heatmap, SHAP feature importance),
+  fully headless.
+- **`services/report_excel.py`** — renders a multi-sheet **openpyxl** workbook.
+- Endpoints stream the bytes as downloads (`Content-Disposition: attachment`). Assembly and
+  rendering run in a threadpool; AI summaries use the LLM with rule-based fallback. Compute
+  on demand — no schema change.
+
+## Analytics workspace (Phase 11)
+
+- **`routes/workspace.py`** — `GET /workspace/summary` aggregates counts (datasets,
+  connections, completed models, chats) and recent items (datasets, trained models, AI SQL
+  queries) across all the user's resources with owner-scoped joins. The React home
+  (`Dashboard`) renders this as a "command console."
+
+## Design system — "Plasma Observatory"
+
+The frontend uses a deliberate identity (not the default indigo SaaS look):
+- **Palette:** ink `#111524`, cool paper `#F4F5F8`, plasma-magenta `nova` accent
+  (`#C51E8A`), gold `spark` `#F6B01E` (logo + hero only), teal `signal`. Defined in
+  `tailwind.config.js`; legacy `indigo` utilities are remapped to `nova`.
+- **Type:** Space Grotesk (display), Inter (body), Space Mono (data/labels/eyebrows).
+- **Motifs:** the `NovaMark` spark logo, a `nebula` plasma gradient + `starfield` for dark
+  hero/auth surfaces, and mono "instrument readout" labels. Tokens/utilities live in
+  `src/index.css`; ECharts are themed to the nova palette.
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

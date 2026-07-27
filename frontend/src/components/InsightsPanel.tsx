@@ -7,22 +7,32 @@ import {
   type Severity,
 } from "../lib/insights";
 import type { ExplainResponse } from "../lib/eda";
+import { PanelHeading } from "./ui";
 
-const SEVERITY_STYLES: Record<Severity, { border: string; badge: string; label: string }> = {
+const SEVERITY: Record<
+  Severity,
+  { rail: string; dot: string; badge: string; label: string; count: string }
+> = {
   critical: {
-    border: "border-l-red-500",
-    badge: "bg-red-100 text-red-700",
+    rail: "border-l-red-500",
+    dot: "bg-red-500",
+    badge: "bg-red-50 text-red-600",
     label: "Critical",
+    count: "text-red-600",
   },
   warning: {
-    border: "border-l-amber-500",
-    badge: "bg-amber-100 text-amber-700",
+    rail: "border-l-amber-500",
+    dot: "bg-amber-500",
+    badge: "bg-amber-50 text-amber-700",
     label: "Warning",
+    count: "text-amber-600",
   },
   info: {
-    border: "border-l-indigo-400",
-    badge: "bg-indigo-100 text-indigo-700",
+    rail: "border-l-nova-400",
+    dot: "bg-nova-500",
+    badge: "bg-nova-50 text-nova-700",
     label: "Info",
+    count: "text-nova-600",
   },
 };
 
@@ -56,47 +66,60 @@ export default function InsightsPanel({
   }
 
   if (loading) return <p className="text-sm text-slate-500">Analyzing…</p>;
-  if (!data) return <p className="text-sm text-red-600">No insights available.</p>;
+  if (!data) return <p className="text-sm text-nova-700">No insights available.</p>;
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Summary + AI narrative */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2 text-sm">
-          <Count n={data.counts.critical} label="critical" cls="bg-red-100 text-red-700" />
-          <Count n={data.counts.warning} label="warning" cls="bg-amber-100 text-amber-700" />
-          <Count n={data.counts.info} label="info" cls="bg-indigo-100 text-indigo-700" />
-        </div>
-        <button
-          onClick={summarize}
-          disabled={narrating || data.total === 0}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
-        >
-          {narrating ? "Summarizing…" : "AI summary"}
-        </button>
+      <PanelHeading
+        eyebrow="Findings"
+        title="Insights & recommendations"
+        action={
+          <button
+            onClick={summarize}
+            disabled={narrating || data.total === 0}
+            className="btn-nova disabled:opacity-60"
+          >
+            {narrating ? "Summarizing…" : "AI summary"}
+          </button>
+        }
+      />
+
+      {/* Severity readouts */}
+      <div className="grid grid-cols-3 gap-3">
+        {(["critical", "warning", "info"] as Severity[]).map((s) => (
+          <div key={s} className="card p-4">
+            <div className={`font-display text-2xl font-bold tabular-nums ${SEVERITY[s].count}`}>
+              {data.counts[s]}
+            </div>
+            <div className="eyebrow mt-1">{s}</div>
+          </div>
+        ))}
       </div>
 
       {narrative && (
-        <p className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
-          {narrative.text}
-          <span
-            className={`ml-1 rounded px-1.5 py-0.5 text-xs font-medium ${
-              narrative.source === "llm"
-                ? "bg-indigo-50 text-indigo-700"
-                : "bg-slate-100 text-slate-500"
-            }`}
-          >
-            {narrative.source === "llm" ? "AI" : "rule-based"}
-          </span>
-        </p>
+        <div className="mt-5 rounded-2xl border border-nova-100 bg-nova-50/50 p-5">
+          <p className="eyebrow text-nova-500">Executive summary</p>
+          <p className="mt-2 text-sm leading-relaxed text-ink">
+            {narrative.text}
+            <span
+              className={`ml-1 rounded px-1.5 py-0.5 text-xs font-medium ${
+                narrative.source === "llm"
+                  ? "bg-white text-nova-700"
+                  : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {narrative.source === "llm" ? "AI" : "rule-based"}
+            </span>
+          </p>
+        </div>
       )}
 
       {/* Insight cards */}
       <div className="mt-6 space-y-3">
         {data.insights.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            No notable issues or patterns were found in this dataset.
-          </p>
+          <div className="card p-8 text-center text-sm text-slate-500">
+            No notable issues or patterns were found — this dataset looks clean.
+          </div>
         ) : (
           data.insights.map((ins, i) => <InsightCard key={i} insight={ins} />)
         )}
@@ -105,30 +128,25 @@ export default function InsightsPanel({
   );
 }
 
-function Count({ n, label, cls }: { n: number; label: string; cls: string }) {
-  return (
-    <span className={`rounded-lg px-2.5 py-1 font-medium ${cls}`}>
-      {n} {label}
-    </span>
-  );
-}
-
 function InsightCard({ insight }: { insight: Insight }) {
-  const style = SEVERITY_STYLES[insight.severity];
+  const s = SEVERITY[insight.severity];
   return (
-    <div className={`rounded-xl border border-l-4 border-slate-200 bg-white p-4 ${style.border}`}>
+    <div className={`card border-l-4 p-4 ${s.rail}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${style.badge}`}>
-          {style.label}
+        <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${s.badge}`}>
+          {s.label}
         </span>
-        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400">
           {insight.category.replace("_", " ")}
         </span>
-        <span className="font-medium text-slate-800">{insight.title}</span>
       </div>
+      <div className="mt-1.5 font-medium text-ink">{insight.title}</div>
       <p className="mt-1 text-sm text-slate-600">{insight.detail}</p>
       {insight.recommendation && (
-        <p className="mt-1 text-sm text-indigo-700">→ {insight.recommendation}</p>
+        <p className="mt-2 flex items-start gap-1.5 text-sm text-nova-700">
+          <span className="mt-0.5 text-nova-400">→</span>
+          {insight.recommendation}
+        </p>
       )}
     </div>
   );
