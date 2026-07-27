@@ -144,6 +144,18 @@ Experiments persist in the `experiments` table (config, per-model metrics, best 
 - No schema change — explanations are computed on demand from the persisted model artifact.
   SHAP compute runs in a threadpool and samples up to `SHAP_SAMPLE` rows.
 
+## NL→SQL engine (Phase 8)
+
+- **`services/nl_sql.py`** — for a live connection: introspects the real schema, asks the LLM
+  for a dialect-aware read-only SELECT, validates it with the shared `sql_safety` guard, runs
+  `EXPLAIN`/`EXPLAIN QUERY PLAN`, executes it wrapped with a `LIMIT` and a **statement timeout**
+  (Postgres `statement_timeout`, MySQL `max_execution_time`), and explains the result. Rule-based
+  `optimization_notes` flag `SELECT *`, missing `WHERE`/`LIMIT`, and JOINs without `ON`.
+- Distinct from Phase 5 (which ran NL→SQL over an *uploaded dataset* in in-memory SQLite); this
+  runs against the user's **actual** database via `db_import.build_engine` (encrypted creds).
+- Each query is persisted to `connection_queries` (per-connection history). SHAP/SQL execution
+  runs in a threadpool. Same documented SSRF surface as Phase 2 (user-supplied hosts).
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

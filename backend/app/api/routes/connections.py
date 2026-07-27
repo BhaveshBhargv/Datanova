@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.crypto import decrypt, encrypt
 from app.core.database import get_db
+from fastapi.concurrency import run_in_threadpool
+
 from app.crud import connection as connection_crud
+from app.crud import connection_query as query_crud
 from app.crud import dataset as dataset_crud
 from app.models.db_connection import DBConnection
 from app.models.dataset import SOURCE_DATABASE, STATUS_READY
@@ -21,7 +24,13 @@ from app.schemas.connection import (
     TableList,
 )
 from app.schemas.dataset import DatasetRead
-from app.services import db_import, ingest
+from app.schemas.nl_sql import (
+    NLQueryRequest,
+    NLQueryResponse,
+    QueryHistoryItem,
+    SchemaResponse,
+)
+from app.services import db_import, ingest, nl_sql
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 
@@ -166,3 +175,75 @@ def delete_connection(
 ) -> None:
     conn = _get_or_404(db, user, connection_id)
     connection_crud.delete(db, conn)
+
+
+# --- NL -> SQL (Phase 8) ---------------------------------------------------
+
+
+@router.get("/{connection_id}/schema", response_model=SchemaResponse)
+async def get_schema(
+    connection_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> SchemaResponse:
+    conn = _get_or_404(db, user, connection_id)
+    try:
+        tables = await run_in_threadpool(nl_sql.introspect_schema, _engine_for(conn))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Could not read schema: {exc.__class__.__name__}",
+        )
+    return SchemaResponse(tables=tables)
+
+
+@router.post("/{connection_id}/query", response_model=NLQueryResponse)
+async def run_nl_query(
+    connection_id: uuid.UUID,
+    data: NLQueryRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> NLQueryResponse:
+    conn = _get_or_404(db, user, connection_id)
+    result = await run_in_threadpool(nl_sql.answer, conn, data.question)
+
+    # Persist a lightweight history entry.
+    query_crud.create(
+        db,
+        conn.id,
+        question=data.question,
+        sql=result.get("sql"),
+        explanation=result.get("explanation"),
+        source=result.get("source"),
+        row_count=result.get("row_count"),
+        error=result.get("error"),
+    )
+    return NLQueryResponse(**result)
+
+
+@router.get("/{connection_id}/queries", response_model=list[QueryHistoryItem])
+def list_queries(
+    connection_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    conn = _get_or_404(db, user, connection_id)
+    return query_crud.list_for_connection(db, conn.id)
+
+
+@router.delete(
+    "/{connection_id}/queries/{query_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_query(
+    connection_id: uuid.UUID,
+    query_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    _get_or_404(db, user, connection_id)
+    query = query_crud.get(db, query_id)
+    if query is None or query.connection_id != connection_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Query not found."
+        )
+    query_crud.delete(db, query)

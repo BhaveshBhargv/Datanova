@@ -18,6 +18,13 @@ class SqlSafetyError(Exception):
     """Raised when a query is not a single read-only statement."""
 
 
+def extract_sql(text: str) -> str:
+    """Pull SQL out of a possibly fenced/prosey LLM response."""
+    fence = re.search(r"```(?:sql)?\s*(.+?)```", text, re.DOTALL | re.IGNORECASE)
+    candidate = fence.group(1) if fence else text
+    return candidate.strip()
+
+
 def validate_read_only(query: str) -> str:
     """Return the trimmed query if it is a single read-only statement, else raise."""
     q = query.strip().rstrip(";").strip()

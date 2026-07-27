@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   createConnection,
   deleteConnection,
@@ -253,6 +253,12 @@ function ConnectionCard({
           <button onClick={onTest} className="text-slate-500 hover:text-slate-800">
             Test
           </button>
+          <Link
+            to={`/connections/${conn.id}/query`}
+            className="text-indigo-600 hover:underline"
+          >
+            Query with AI
+          </Link>
           <button onClick={onOpen} className="text-indigo-600 hover:underline">
             {open ? "Close" : "Browse & import"}
           </button>

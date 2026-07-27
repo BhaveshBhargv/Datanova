@@ -341,3 +341,35 @@ positive pushes the prediction up, negative pushes it down. `400` if the index i
 ### `POST /api/experiments/{eid}/narrative`  🔒
 Plain-English summary of the model's key drivers from the SHAP importances →
 `{ "text": "…", "source": "llm" | "fallback" }` (rule-based fallback when no API key).
+
+# Phase 8
+
+NL→SQL over a **live connected database** (Phase 2 connections). All 🔒, ownership-scoped.
+Read-only, row-capped, with a statement timeout. Queries are saved to a per-connection history.
+
+### `GET /api/connections/{cid}/schema`  🔒
+Introspected schema: `{ "tables": [{ "table": "orders", "columns": [{"name":"amount","type":"REAL"}] }] }`.
+
+### `POST /api/connections/{cid}/query`  🔒
+Body `{ "question": "total order amount by country?" }`. Generates dialect-aware SQL,
+validates it read-only, runs EXPLAIN, executes (capped), and explains:
+```json
+{
+  "sql": "WITH order_country AS (...) SELECT country, SUM(amount) AS total_amount ... ORDER BY total_amount DESC",
+  "columns": ["country","total_amount"],
+  "rows": [{"country":"UK","total_amount":15456.25}, "..."],
+  "row_count": 5,
+  "plan": ["SCAN o", "SEARCH c USING INTEGER PRIMARY KEY", "..."],
+  "optimization_notes": ["No WHERE clause — this may scan the entire table.", "..."],
+  "explanation": "The UK leads with the highest total order amount at $15,456.25…",
+  "source": "llm", "error": null
+}
+```
+Unsafe generated SQL is rejected (not executed) with `error` set; without an API key the
+response is a graceful message and nothing runs. Every call is persisted to history.
+
+### `GET /api/connections/{cid}/queries`  🔒
+Recent query history (question, sql, explanation, source, row_count, error, created_at).
+
+### `DELETE /api/connections/{cid}/queries/{qid}`  🔒
+Remove a history entry. `204 No Content`.

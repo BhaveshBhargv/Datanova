@@ -26,8 +26,8 @@ analytics assistant — with dashboards and exportable reports.
 5. **Conversational AI Assistant** — NL Q&A → SQL + business explanations ✅
 6. **AutoML** — auto problem detection, multi-model training, comparison ✅
 7. **Explainable AI** — SHAP feature importance + prediction explanations ✅
+8. **NL→SQL Engine** — safe NL-to-SQL: validate, execute, optimize, explain ✅
    _← current_
-8. **NL→SQL Engine** — safe NL-to-SQL: validate, execute, optimize, explain
 9. **Insights & Recommendations** — trends, anomalies, actionable recommendations
 10. **Reporting & Export** — PDF/Excel reports with visuals, stats, AI summaries
 11. **Analytics Workspace** — manage datasets, dashboards, saved analyses, history

@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import DatasetsPage from "./pages/DatasetsPage";
 import DatasetDetailPage from "./pages/DatasetDetailPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
+import ConnectionQueryPage from "./pages/ConnectionQueryPage";
 
 export default function App() {
   return (
@@ -27,6 +28,10 @@ export default function App() {
             <Route path="/datasets" element={<DatasetsPage />} />
             <Route path="/datasets/:id" element={<DatasetDetailPage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
+            <Route
+              path="/connections/:id/query"
+              element={<ConnectionQueryPage />}
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,3 +1,4 @@
+from app.models.connection_query import ConnectionQuery
 from app.models.conversation import Conversation, Message
 from app.models.dataset import Dataset
 from app.models.db_connection import DBConnection
@@ -13,4 +14,5 @@ __all__ = [
     "Conversation",
     "Message",
     "Experiment",
+    "ConnectionQuery",
 ]

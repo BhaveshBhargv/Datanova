@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     AUTOML_MAX_ROWS: int = 20_000
     SHAP_SAMPLE: int = 300
 
+    # NL->SQL (live connected databases)
+    NL_SQL_ROW_CAP: int = 1000
+    NL_SQL_TIMEOUT_MS: int = 10_000
+
     # CORS — comma-separated origins. Kept as a raw string because
     # pydantic-settings JSON-decodes list-typed env values before validators run.
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173"
