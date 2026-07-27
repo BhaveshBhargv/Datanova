@@ -21,8 +21,14 @@ from app.models.experiment import (
     Experiment,
 )
 from app.models.user import User
+from app.schemas.eda import ExplainResponse
 from app.schemas.experiment import ExperimentCreate, ExperimentRead
-from app.services import automl, cleaning
+from app.schemas.explain_ml import (
+    ImportanceResponse,
+    PredictionExplainRequest,
+    PredictionExplainResponse,
+)
+from app.services import automl, cleaning, explain_ml, narrate
 
 router = APIRouter(tags=["automl"])
 
@@ -156,3 +162,69 @@ def delete_experiment(
     if exp.model_path:
         storage.delete(exp.model_path)
     experiment_crud.delete(db, exp)
+
+
+# --- Explainability / SHAP (Phase 7) --------------------------------------
+
+
+def _completed_or_409(db: Session, user: User, experiment_id: uuid.UUID) -> Experiment:
+    exp = _experiment_or_404(db, user, experiment_id)
+    if exp.status != STATUS_COMPLETED or not exp.model_path:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This experiment has no completed model to explain.",
+        )
+    return exp
+
+
+def _dataset_for(db: Session, user: User, exp: Experiment) -> Dataset:
+    return dataset_crud.get_owned(db, user.id, exp.dataset_id)
+
+
+@router.get("/experiments/{experiment_id}/importance", response_model=ImportanceResponse)
+async def feature_importance(
+    experiment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    exp = _completed_or_409(db, user, experiment_id)
+    df = cleaning.load_current(_dataset_for(db, user, exp))
+    try:
+        return await run_in_threadpool(explain_ml.global_importance, exp, df)
+    except explain_ml.ExplainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/experiments/{experiment_id}/predictions/explain",
+    response_model=PredictionExplainResponse,
+)
+async def explain_prediction(
+    experiment_id: uuid.UUID,
+    req: PredictionExplainRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    exp = _completed_or_409(db, user, experiment_id)
+    df = cleaning.load_current(_dataset_for(db, user, exp))
+    try:
+        return await run_in_threadpool(
+            explain_ml.explain_prediction, exp, df, req.index
+        )
+    except explain_ml.ExplainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/experiments/{experiment_id}/narrative", response_model=ExplainResponse)
+async def explain_drivers(
+    experiment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ExplainResponse:
+    exp = _completed_or_409(db, user, experiment_id)
+    df = cleaning.load_current(_dataset_for(db, user, exp))
+    importance = await run_in_threadpool(explain_ml.global_importance, exp, df)
+    text, source = narrate.explain_drivers(
+        importance["importance"], exp.problem_type, exp.target_column
+    )
+    return ExplainResponse(text=text, source=source)

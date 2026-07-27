@@ -131,6 +131,19 @@ using the Phase 4 ECharts layer.
 
 Experiments persist in the `experiments` table (config, per-model metrics, best model, status).
 
+## Explainable AI / SHAP (Phase 7)
+
+- **`services/explain_ml.py`** — loads the saved best pipeline (joblib), runs the
+  model-appropriate SHAP explainer (`TreeExplainer` for tree/boosting models,
+  `LinearExplainer` for linear) on a sample of the current data, and **aggregates SHAP
+  values from one-hot encoded columns back to the original features** using the fitted
+  `ColumnTransformer`. Provides `global_importance()` and `explain_prediction()` (per-row
+  contributions, predicted label + probabilities, base value).
+- Reuses `narrate.explain_drivers()` for a plain-English, LLM-or-fallback summary of the
+  key drivers.
+- No schema change — explanations are computed on demand from the persisted model artifact.
+  SHAP compute runs in a threadpool and samples up to `SHAP_SAMPLE` rows.
+
 ## Extending in later phases
 
 New resources (models, reports, dashboards) follow the same vertical slice:

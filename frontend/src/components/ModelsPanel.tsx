@@ -7,6 +7,7 @@ import {
   type Experiment,
 } from "../lib/experiments";
 import { formatDate } from "../lib/format";
+import ExplainabilitySection from "./ExplainabilitySection";
 
 const METRIC_ORDER: Record<string, string[]> = {
   classification: ["accuracy", "precision", "recall", "f1", "roc_auc"],
@@ -16,9 +17,11 @@ const METRIC_ORDER: Record<string, string[]> = {
 export default function ModelsPanel({
   datasetId,
   columns,
+  rowCount,
 }: {
   datasetId: string;
   columns: ColumnInfo[];
+  rowCount: number;
 }) {
   const colNames = useMemo(() => columns.map((c) => c.name), [columns]);
   const [target, setTarget] = useState(colNames[colNames.length - 1] ?? "");
@@ -176,6 +179,13 @@ export default function ModelsPanel({
           </p>
         )}
         {experiment && <Leaderboard experiment={experiment} />}
+        {experiment?.status === "completed" && (
+          <ExplainabilitySection
+            key={experiment.id}
+            experimentId={experiment.id}
+            rowCount={rowCount}
+          />
+        )}
       </div>
     </div>
   );

@@ -304,3 +304,40 @@ Experiment detail (leaderboard + best model).
 
 ### `DELETE /api/experiments/{eid}`  🔒
 Deletes the experiment and its saved model artifact. `204 No Content`.
+
+# Phase 7
+
+SHAP explanations for a **completed** experiment's best model. All 🔒, ownership-scoped.
+`409` if the experiment isn't completed / has no saved model.
+
+### `GET /api/experiments/{eid}/importance`  🔒
+Global feature importance (mean |SHAP|), aggregated back to original features:
+```json
+{
+  "problem_type": "classification", "target": "churned", "sample_size": 220,
+  "importance": [
+    {"feature": "monthly_charges", "importance": 0.1312},
+    {"feature": "tenure_months", "importance": 0.1254},
+    {"feature": "age", "importance": 0.0486}
+  ]
+}
+```
+
+### `POST /api/experiments/{eid}/predictions/explain`  🔒
+Explain the model's prediction for a dataset row. Body `{ "index": 0 }`:
+```json
+{
+  "index": 0, "prediction": 0, "predicted_label": 0,
+  "proba": {"0": 0.97, "1": 0.03}, "base_value": 0.31,
+  "contributions": [
+    {"feature": "monthly_charges", "value": 28, "contribution": 0.196},
+    {"feature": "tenure_months", "value": 40, "contribution": -0.041}
+  ]
+}
+```
+Contributions are per original feature (one-hot columns summed), ordered by magnitude;
+positive pushes the prediction up, negative pushes it down. `400` if the index is out of range.
+
+### `POST /api/experiments/{eid}/narrative`  🔒
+Plain-English summary of the model's key drivers from the SHAP importances →
+`{ "text": "…", "source": "llm" | "fallback" }` (rule-based fallback when no API key).

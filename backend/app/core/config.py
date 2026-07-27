@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # AutoML
     AUTOML_MAX_ROWS: int = 20_000
+    SHAP_SAMPLE: int = 300
 
     # CORS — comma-separated origins. Kept as a raw string because
     # pydantic-settings JSON-decodes list-typed env values before validators run.

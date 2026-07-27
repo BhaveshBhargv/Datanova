@@ -145,7 +145,11 @@ export default function DatasetDetailPage() {
           <AssistantPanel datasetId={id} columns={dataset.columns} />
         )}
         {tab === "models" && (
-          <ModelsPanel datasetId={id} columns={dataset.columns} />
+          <ModelsPanel
+            datasetId={id}
+            columns={dataset.columns}
+            rowCount={dataset.n_rows}
+          />
         )}
         {tab === "cleaning" && (
           <CleaningPanel

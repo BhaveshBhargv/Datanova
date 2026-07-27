@@ -16,6 +16,32 @@ SYSTEM = (
 )
 
 
+def explain_drivers(
+    importance: list[dict], problem_type: str, target: str
+) -> tuple[str, str]:
+    """Narrate a model's key drivers from ranked SHAP importances."""
+    top = importance[:5]
+    if not top:
+        return "The model has no features to explain.", "fallback"
+    facts = (
+        f"Model target: {target} ({problem_type}). "
+        "Top features by mean absolute SHAP importance: "
+        + ", ".join(f"{f['feature']} ({f['importance']})" for f in top)
+        + "."
+    )
+    prompt = (
+        "Explain, for a business user, which features most drive this model's "
+        f"predictions and what that implies:\n{facts}"
+    )
+    names = [f["feature"] for f in top[:3]]
+    fallback = (
+        f"The model's predictions are driven most by {', '.join(names)}. "
+        f"{top[0]['feature']} has the largest overall influence on the outcome."
+    )
+    text = llm.generate(prompt, SYSTEM)
+    return (text, "llm") if text else (fallback, "fallback")
+
+
 def explain(df: pd.DataFrame, kind: str, spec: dict | None) -> tuple[str, str]:
     """Return (text, source) where source is 'llm' or 'fallback'."""
     if kind == "overview":
