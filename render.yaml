@@ -8,6 +8,9 @@ services:
     dockerContext: ./backend
     plan: free
     healthCheckPath: /api/health
+    # Free tier has no preDeployCommand — run migrations in the start command,
+    # then bind uvicorn to Render's $PORT.
+    dockerCommand: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -17,14 +20,14 @@ services:
         value: "30"
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
+      - key: OPENROUTER_API_KEY
+        sync: false          # paste your key in the Render dashboard
       - key: BACKEND_CORS_ORIGINS
         sync: false          # set to your Vercel URL after first deploy
       - key: DATABASE_URL
         fromDatabase:
           name: ai-analytics-db
           property: connectionString
-    # Run migrations before the app starts serving.
-    preDeployCommand: alembic upgrade head
 
 databases:
   - name: ai-analytics-db
