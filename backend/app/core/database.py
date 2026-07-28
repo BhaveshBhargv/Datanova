@@ -18,6 +18,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
             settings.DATABASE_URL,
             connect_args=connect_args,
             poolclass=StaticPool,
+            pool_pre_ping=True,
         )
     else:
         # File-based dev DB: normal pooling, safe for concurrent ASGI threads.
