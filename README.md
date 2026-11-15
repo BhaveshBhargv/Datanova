@@ -1,5 +1,5 @@
 # DataNova
-
+LIVE: https://datanova-six.vercel.app/
 An end-to-end data analytics platform combining data science, machine learning, AI, and
 modern software engineering. Upload datasets or connect a SQL database, then profile,
 clean, explore, model, explain, and **chat with your data** through an LLM-powered
